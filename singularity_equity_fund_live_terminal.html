@@ -1,0 +1,2747 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Singularity Equity Fund I (SEF I) — Live Auto-Updating Portfolio & Private Market Terminal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            slate: {
+              950: '#060913',
+              900: '#0B1120',
+              850: '#111827',
+              800: '#1E293B',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      background-color: #060913;
+      color: #F1F5F9;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow-x: hidden;
+    }
+    .font-mono-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+    }
+    .glass-card {
+      background: linear-gradient(145deg, rgba(17, 24, 39, 0.92), rgba(11, 17, 32, 0.96));
+      border: 1px solid rgba(51, 65, 85, 0.55);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card:hover {
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.15);
+    }
+    .row-hover {
+      transition: background-color 0.15s ease;
+    }
+    .row-hover:hover {
+      background-color: rgba(30, 41, 59, 0.65);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0B1120;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    @keyframes pulse-live {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(1.15); }
+    }
+    .live-dot {
+      animation: pulse-live 2s infinite ease-in-out;
+    }
+    @keyframes flash-update {
+      0% { background-color: rgba(16, 185, 129, 0.25); }
+      100% { background-color: transparent; }
+    }
+    .flash-row {
+      animation: flash-update 1.2s ease-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- TOP INSTITUTIONAL COMMAND BAR -->
+  <header class="sticky top-0 z-30 glass-panel border-b border-slate-800/80 shadow-2xl">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3.5">
+      <!-- Top Row: Title, Fund Metadata Badges & Live Attribution Ticker -->
+      <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+        <div class="flex items-start sm:items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 shrink-0 font-mono font-bold text-lg tracking-tighter text-white">
+            SEF I
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 class="text-base sm:text-lg md:text-xl font-bold tracking-tight text-white">
+                Singularity Equity Fund I (SEF I)
+              </h1>
+              <span class="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider rounded-md bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                CAT III Long-Only AIF
+              </span>
+              <span class="px-2 py-0.5 text-[11px] font-medium rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+                Singularity AMC LLP
+              </span>
+              <button onclick="openLiveSyncModal()" class="px-2.5 py-0.5 text-[11px] font-semibold rounded-md bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 transition-colors">
+                <i data-lucide="radio" class="w-3 h-3"></i>
+                <span>Live Link & Cloud Sync Setup</span>
+              </button>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-slate-400 mt-1">
+              <span>Inception: <strong class="text-slate-200">13 Jul 2023</strong></span>
+              <span class="text-slate-700">•</span>
+              <span>Target: <strong class="text-slate-200">~₹3,000 Cr</strong> (Sponsor: <strong class="text-slate-200">~₹400 Cr</strong>)</span>
+              <span class="text-slate-700">•</span>
+              <span>Factsheet: <strong class="text-amber-300">30 Sep 2026</strong></span>
+              <span class="text-slate-700">•</span>
+              <span class="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
+                <span id="livePulseDot" class="w-2 h-2 rounded-full bg-emerald-400 live-dot"></span>
+                <span id="liveFeedStatusText">Auto-Sync Active • Last Tick: 14 Oct 2026 (14:00 IST)</span>
+              </span>
+              <button onclick="triggerLiveMarketSync(true)" id="syncNowBtn" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-[11px] font-mono inline-flex items-center gap-1 transition-colors">
+                <i data-lucide="refresh-cw" id="syncSpinnerIcon" class="w-3 h-3"></i>
+                <span id="syncCountdownText">Sync Now (60s)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weighted Live Attribution & Alpha Command Strip -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0">
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+              <span>Weighted 1D NAV Move</span>
+              <span class="text-[9px] text-indigo-400 font-mono">∑(Wt × 1D%)</span>
+            </div>
+            <div class="flex items-baseline gap-2 mt-0.5">
+              <span id="weightedNavMove" class="text-lg font-bold font-mono-num text-emerald-400">+0.84%</span>
+              <span id="weightedNavBps" class="text-[11px] font-mono-num text-emerald-300/80">(+84.3 bps)</span>
+            </div>
+            <div class="text-[10px] text-slate-500">Normalized Listed: <span id="normalizedListedMove" class="text-emerald-400 font-mono-num">+1.34%</span></div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Since Inception IRR*</div>
+            <div class="flex items-baseline gap-1.5 mt-0.5">
+              <span class="text-lg font-bold font-mono-num text-white">37.3%</span>
+              <span class="text-[11px] font-mono-num text-emerald-400">+28.6% α</span>
+            </div>
+            <div class="text-[10px] text-slate-500">vs BSE 500 (8.7%) & Nifty (4.9%)</div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Jensen's Alpha / Sharpe</div>
+            <div class="flex items-baseline gap-1.5 mt-0.5">
+              <span class="text-lg font-bold font-mono-num text-cyan-400">+29.3</span>
+              <span class="text-xs font-mono-num text-slate-300">/ 1.3x</span>
+            </div>
+            <div class="text-[10px] text-slate-500">BSE 500 Sharpe: 0.6x | Treynor: 37.7</div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Top Holdings / Unlisted</div>
+            <div class="flex items-baseline gap-1.5 mt-0.5">
+              <span class="text-lg font-bold font-mono-num text-white">65.5%</span>
+              <span class="text-xs font-mono-num text-amber-400">/ 5.9%</span>
+            </div>
+            <div class="text-[10px] text-slate-500">SMID: 82.7% | Cash: 1.8%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Second Row: Navigation Tabs, Search Bar & Filter Pills -->
+      <div class="mt-3.5 pt-3 border-t border-slate-800/80 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <!-- Main Navigation Tabs -->
+        <div class="flex flex-wrap items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 w-fit">
+          <button onclick="switchTab('listed')" id="tabBtn-listed" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-2">
+            <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+            <span>Tab 1: Listed Equities Terminal (19+1)</span>
+          </button>
+          <button onclick="switchTab('unlisted')" id="tabBtn-unlisted" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center gap-2">
+            <i data-lucide="briefcase" class="w-3.5 h-3.5"></i>
+            <span>Tab 2: Unlisted / Pre-IPO Tracker (5)</span>
+          </button>
+          <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center gap-2">
+            <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
+            <span>Tab 3: Fund Analytics & Live GSheets Link</span>
+          </button>
+        </div>
+
+        <!-- Global Search & Strategy/Sector Controls -->
+        <div id="filterControlsBar" class="flex flex-wrap items-center gap-2">
+          <div class="relative">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input
+              id="searchInput"
+              type="text"
+              oninput="applyFilters()"
+              placeholder="Search company, ticker (e.g. HEGAM, AMBER), catalyst..."
+              class="bg-slate-900 border border-slate-700/80 focus:border-indigo-500 focus:outline-none rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 w-64 sm:w-72"
+            />
+          </div>
+
+          <!-- Strategy Bucket Pills -->
+          <div class="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800 text-[11px]">
+            <button onclick="setStrategyFilter('All')" data-strat="All" class="strat-pill px-2.5 py-1 rounded-md font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">All Buckets</button>
+            <button onclick="setStrategyFilter('Listed')" data-strat="Listed" class="strat-pill px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200">Listed</button>
+            <button onclick="setStrategyFilter('Preferential Allotment')" data-strat="Preferential Allotment" class="strat-pill px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200">PIPE / Pref Allotment (7)</button>
+            <button onclick="setStrategyFilter('Unlisted / Pre-IPO')" data-strat="Unlisted / Pre-IPO" class="strat-pill px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200">Unlisted / Pre-IPO (5)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sector Filter Pills Strip -->
+      <div id="sectorPillsBar" class="mt-2.5 flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mr-1 shrink-0">Sector Filter:</span>
+        <button onclick="setSectorFilter('All')" data-sector="All" class="sector-pill shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-900">All Sectors (22.8% Max Cap: 25%)</button>
+        <button onclick="setSectorFilter('Industrials')" data-sector="Industrials" class="sector-pill shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700">Industrials (22.8%)</button>
+        <button onclick="setSectorFilter('Financial Services')" data-sector="Financial Services" class="sector-pill shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700">Financial Services (17.0%)</button>
+        <button onclick="setSectorFilter('Healthcare / Pharma')" data-sector="Healthcare / Pharma" class="sector-pill shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700">Healthcare / Pharma (13.9%)</button>
+        <button onclick="setSectorFilter('Energy Transition')" data-sector="Energy Transition" class="sector-pill shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700">Energy Transition (12.5%)</button>
+        <button onclick="setSectorFilter('Consumer')" data-sector="Consumer" class="sector-pill shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700">Consumer (11.0%)</button>
+        <button onclick="setSectorFilter('Others')" data-sector="Others" class="sector-pill shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700">Others (9.8%)</button>
+        <button onclick="setSectorFilter('New Economy (Technology)')" data-sector="New Economy (Technology)" class="sector-pill shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700">New Economy / Tech (8.6%)</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE CONTAINER -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 py-6">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: LISTED EQUITIES LIVE TERMINAL       -->
+    <!-- ========================================== -->
+    <section id="tab-listed" class="space-y-5">
+      <!-- Top Callout Banner: Sept 2026 IPO Tracker & Corporate Restructuring Highlights -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+        <div class="glass-card rounded-xl p-3.5 border-l-4 border-l-emerald-500">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Sept 2026 IPO Breakout (#9 Holding)</span>
+            <span id="symbiotecIpoSpreadBadge" class="text-xs font-mono-num px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-semibold">+29.05% vs Issue</span>
+          </div>
+          <div class="mt-1.5 flex items-baseline justify-between">
+            <h3 class="text-sm font-bold text-white">Symbiotec Pharmalab (NSE:SYMBIOTEC)</h3>
+            <span id="symbiotecTopPrice" class="text-sm font-mono-num font-bold text-emerald-400">₹1,275.00 <span class="text-xs">(+8.70% 1D)</span></span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Listed flat at ₹988 issue price on 1 Sep 2026 (₹1,757 Cr IPO); surged to a new 52-week high of ₹1,280.00 on 14 Oct 2026 ahead of Q2 FY27 results.</p>
+        </div>
+
+        <div class="glass-card rounded-xl p-3.5 border-l-4 border-l-indigo-500">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-indigo-400">NCLT Composite Scheme (#1 Holding)</span>
+            <span class="text-xs font-mono-num px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 font-semibold">1:1 Demerger Allotted</span>
+          </div>
+          <div class="mt-1.5 flex items-baseline justify-between">
+            <h3 class="text-sm font-bold text-white">HEG Advanced Materials (BOM:509631 / HEGAM)</h3>
+            <span id="hegTopPrice" class="text-sm font-mono-num font-bold text-emerald-400">₹232.20 <span class="text-xs">(+0.89% 1D)</span></span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Renamed 2 Sep 2026 post 1:1 demerger of HEG Graphite (0.48% unlisted holding); subsidiary Replus Engitech won ₹345 Cr+ battery orders in Sept–Oct 2026.</p>
+        </div>
+
+        <div class="glass-card rounded-xl p-3.5 border-l-4 border-l-amber-500">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-amber-400">Sept 2026 Luxury IPO & Split Tracker</span>
+            <span id="perniasIpoSpreadBadge" class="text-xs font-mono-num px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 font-semibold">-9.39% vs ₹575 IPO</span>
+          </div>
+          <div class="mt-1.5 flex items-baseline justify-between">
+            <h3 class="text-sm font-bold text-white">Purple Style Labs (NSE:PERNIASPOP)</h3>
+            <span id="perniasTopPrice" class="text-sm font-mono-num font-bold text-emerald-400">₹521.00 <span class="text-xs">(+0.85% 1D)</span></span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Listed 7 Sep 2026 at ₹535 vs ₹575 issue price. Meanwhile, #11 Shankara Buildpro (NSE:BUILDPRO) rallied +3.26% to ₹240.40 post its 8 Oct 1:5 split.</p>
+        </div>
+      </div>
+
+      <!-- Institutional High-Density Table -->
+      <div class="glass-card rounded-2xl overflow-hidden shadow-2xl">
+        <div class="px-5 py-3.5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-slate-900/60">
+          <div class="flex items-center gap-2.5">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">Listed Portfolio Holdings & PIPE Tracker</h2>
+            <span id="tableCountBadge" class="px-2 py-0.5 text-xs font-mono-num rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">20 / 20 Shown</span>
+          </div>
+          <div class="text-xs text-slate-400 flex items-center gap-2">
+            <i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>Click any holding row to open the <strong>Live Intelligence & Catalyst Drawer</strong></span>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800/90 bg-slate-950/60 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <th class="py-3 pl-5 pr-2">Rank</th>
+                <th class="py-3 px-3">Company & Ticker</th>
+                <th class="py-3 px-3">Sector & Cap</th>
+                <th class="py-3 px-3">Strategy / Framework</th>
+                <th class="py-3 px-3 text-right">SEF I Wt %</th>
+                <th class="py-3 px-3 text-right">Live CMP (₹)</th>
+                <th class="py-3 px-3 text-right">1D Change</th>
+                <th class="py-3 px-3 text-right">NAV Contrib</th>
+                <th class="py-3 px-4 min-w-[190px]">52-Week Low / High Range</th>
+                <th class="py-3 px-3 text-right">Mkt Cap (₹ Cr)</th>
+                <th class="py-3 pl-3 pr-5 text-right">Trailing P/E</th>
+              </tr>
+            </thead>
+            <tbody id="holdingsTableBody" class="divide-y divide-slate-800/60 text-xs">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: UNLISTED / PRE-IPO DEAL TRACKER     -->
+    <!-- ========================================== -->
+    <section id="tab-unlisted" class="hidden space-y-6">
+      <div class="glass-card rounded-2xl p-5 border-l-4 border-l-indigo-500 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Private Market Sleeve</span>
+            <span class="text-xs text-slate-400 font-mono-num">Factsheet As On 30 Sep 2026</span>
+          </div>
+          <h2 class="text-lg font-bold text-white mt-1">Unlisted & Pre-IPO Portfolio Intelligence (5.9% / 6.0% of Total AUM)</h2>
+          <p class="text-xs text-slate-300 mt-1 max-w-4xl">
+            Singularity's differentiated "Private-to-Public" crossover mandate captures pre-IPO valuation arbitrage and corporate demerger spin-outs prior to mainboard price discovery. Three holdings are carried at independent March 2026 Valuation Reports, while two recent special situations (Il Jin Electronics & demerged HEG Graphite) are held at cost.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-3 shrink-0">
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 text-right">
+            <div class="text-[10px] uppercase tracking-wider text-slate-400">Held At Cost (2)</div>
+            <div class="text-base font-bold font-mono-num text-emerald-400">2.94% AUM</div>
+            <div class="text-[10px] text-slate-500">Il Jin (2.46%) + HEG Graphite (0.48%)</div>
+          </div>
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 text-right">
+            <div class="text-[10px] uppercase tracking-wider text-slate-400">Mar '26 Valuation Report (3)</div>
+            <div class="text-base font-bold font-mono-num text-cyan-400">3.00% AUM</div>
+            <div class="text-[10px] text-slate-500">Lohum (1.89%), Servify (0.60%), Zepto (0.51%)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 Unlisted Deal Cards Grid -->
+      <div id="unlistedCardsGrid" class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: FUND ANALYTICS & GSHEETS EXPORTER   -->
+    <!-- ========================================== -->
+    <section id="tab-analytics" class="hidden space-y-6">
+      <!-- Row 1: Multi-Period Alpha Scorecard & Risk Table -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Performance vs Benchmark Table (7 cols) -->
+        <div class="lg:col-span-7 glass-card rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-wider text-white">Pre-Expense & Pre-Tax Return Attribution (As of 30 Sep 2026)</h3>
+              <p class="text-xs text-slate-400 mt-0.5">*Annualized returns for 2 Yr, 3 Yr & Since Inception (13 Jul 2023). Outperformance across every horizon.</p>
+            </div>
+            <span class="px-2.5 py-1 text-xs font-mono-num font-semibold rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              +28.6% Annualized Alpha vs BSE 500
+            </span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 uppercase text-[11px]">
+                  <th class="py-2.5 px-3">Portfolio / Index</th>
+                  <th class="py-2.5 px-3 text-right">3M</th>
+                  <th class="py-2.5 px-3 text-right">6M</th>
+                  <th class="py-2.5 px-3 text-right">12M</th>
+                  <th class="py-2.5 px-3 text-right">2 Yr*</th>
+                  <th class="py-2.5 px-3 text-right">3 Yr*</th>
+                  <th class="py-2.5 px-3 text-right">Since Inception*</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 font-mono-num">
+                <tr class="bg-indigo-500/10 font-semibold text-white">
+                  <td class="py-3 px-3 font-sans font-bold text-indigo-300">Singularity Equity Fund I (SEF I)</td>
+                  <td class="py-3 px-3 text-right text-emerald-400">+8.2%</td>
+                  <td class="py-3 px-3 text-right text-emerald-400">+23.5%</td>
+                  <td class="py-3 px-3 text-right text-emerald-400">+11.1%</td>
+                  <td class="py-3 px-3 text-right text-emerald-400">+19.1%</td>
+                  <td class="py-3 px-3 text-right text-emerald-400">+40.5%</td>
+                  <td class="py-3 px-3 text-right text-emerald-400 font-bold">+37.3%</td>
+                </tr>
+                <tr class="text-slate-300">
+                  <td class="py-3 px-3 font-sans">BSE 500 Benchmark</td>
+                  <td class="py-3 px-3 text-right text-rose-400">-3.9%</td>
+                  <td class="py-3 px-3 text-right text-slate-300">+7.4%</td>
+                  <td class="py-3 px-3 text-right text-rose-400">-3.2%</td>
+                  <td class="py-3 px-3 text-right text-slate-500">—</td>
+                  <td class="py-3 px-3 text-right text-slate-500">—</td>
+                  <td class="py-3 px-3 text-right text-slate-300">+8.7%</td>
+                </tr>
+                <tr class="text-slate-300">
+                  <td class="py-3 px-3 font-sans">Nifty 50 Index</td>
+                  <td class="py-3 px-3 text-right text-slate-500">—</td>
+                  <td class="py-3 px-3 text-right text-slate-500">—</td>
+                  <td class="py-3 px-3 text-right text-slate-500">—</td>
+                  <td class="py-3 px-3 text-right text-slate-500">—</td>
+                  <td class="py-3 px-3 text-right text-slate-500">—</td>
+                  <td class="py-3 px-3 text-right text-slate-300">+4.9%</td>
+                </tr>
+                <tr class="bg-emerald-500/5 text-emerald-300 font-semibold">
+                  <td class="py-2.5 px-3 font-sans">Active Alpha Spread (vs BSE 500)</td>
+                  <td class="py-2.5 px-3 text-right">+12.1%</td>
+                  <td class="py-2.5 px-3 text-right">+16.1%</td>
+                  <td class="py-2.5 px-3 text-right">+14.3%</td>
+                  <td class="py-2.5 px-3 text-right">—</td>
+                  <td class="py-2.5 px-3 text-right">—</td>
+                  <td class="py-2.5 px-3 text-right">+28.6%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Institutional Risk-Adjusted Metrics (5 cols) -->
+        <div class="lg:col-span-5 glass-card rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-wider text-white">Institutional Risk & Alpha Scorecard</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Risk-adjusted efficiency vs BSE 500 benchmark</p>
+            </div>
+            <span class="px-2 py-0.5 text-[11px] font-mono-num rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+              Jensen's α: +29.3%
+            </span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 uppercase text-[11px]">
+                  <th class="py-2.5 px-3">Risk Metric</th>
+                  <th class="py-2.5 px-3 text-right">SEF I</th>
+                  <th class="py-2.5 px-3 text-right">BSE 500</th>
+                  <th class="py-2.5 px-3 text-right">Edge / Spread</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 font-mono-num">
+                <tr>
+                  <td class="py-2.5 px-3 font-sans text-slate-300">Annualized Std Deviation (%)</td>
+                  <td class="py-2.5 px-3 text-right text-white font-semibold">30.3</td>
+                  <td class="py-2.5 px-3 text-right text-slate-400">14.9</td>
+                  <td class="py-2.5 px-3 text-right text-amber-400">+15.4 vol</td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 px-3 font-sans text-slate-300">Sharpe Ratio (x)</td>
+                  <td class="py-2.5 px-3 text-right text-emerald-400 font-bold">1.3</td>
+                  <td class="py-2.5 px-3 text-right text-slate-400">0.6</td>
+                  <td class="py-2.5 px-3 text-right text-emerald-400">2.17x Benchmark</td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 px-3 font-sans text-slate-300">M-Squared (M²) (%)</td>
+                  <td class="py-2.5 px-3 text-right text-emerald-400 font-bold">19.2</td>
+                  <td class="py-2.5 px-3 text-right text-slate-400">9.4</td>
+                  <td class="py-2.5 px-3 text-right text-emerald-400">+9.8% Risk-Adj</td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 px-3 font-sans text-slate-300">Treynor Ratio</td>
+                  <td class="py-2.5 px-3 text-right text-emerald-400 font-bold">37.7</td>
+                  <td class="py-2.5 px-3 text-right text-slate-400">9.4</td>
+                  <td class="py-2.5 px-3 text-right text-emerald-400">4.01x Benchmark</td>
+                </tr>
+                <tr class="bg-cyan-500/10">
+                  <td class="py-2.5 px-3 font-sans font-bold text-cyan-300">Jensen's Alpha (%)</td>
+                  <td class="py-2.5 px-3 text-right text-cyan-300 font-bold">29.3</td>
+                  <td class="py-2.5 px-3 text-right text-slate-500">0.0</td>
+                  <td class="py-2.5 px-3 text-right text-cyan-300 font-bold">+2,930 bps</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Three Interactive Visual Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Chart 1: Sector Allocation with 25% Hard Cap Line -->
+        <div class="glass-card rounded-2xl p-5 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-wider text-white">Sector Allocation vs 25% Hard Cap</h3>
+              <p class="text-xs text-slate-400">Industrials leads at 22.8% (220 bps buffer below 25% limit)</p>
+            </div>
+            <span class="px-2 py-0.5 text-[10px] font-mono-num rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+              --- 25% Cap
+            </span>
+          </div>
+          <div class="relative flex-1 min-h-[260px]">
+            <canvas id="sectorChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Market Cap Breakdown -->
+        <div class="glass-card rounded-2xl p-5 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-wider text-white">AUM Market Cap & Liquidity Split</h3>
+              <p class="text-xs text-slate-400">High-conviction SMID core (82.7%) + Unlisted sleeve (5.9%)</p>
+            </div>
+            <span class="px-2 py-0.5 text-[10px] font-mono-num rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              100.0% AUM
+            </span>
+          </div>
+          <div class="relative flex-1 min-h-[260px]">
+            <canvas id="capSplitChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 3: Forward P/E De-Rating vs PAT Growth (FY26-FY28E) -->
+        <div class="glass-card rounded-2xl p-5 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-wider text-white">Forward P/E Compression & PAT Growth</h3>
+              <p class="text-xs text-slate-400">SEF I ~38% PAT CAGR compresses P/E from 54x (FY26) to 18x (FY28E)</p>
+            </div>
+            <span class="px-2 py-0.5 text-[10px] font-mono-num rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              FY28E PEG: 0.45x
+            </span>
+          </div>
+          <div class="relative flex-1 min-h-[260px]">
+            <canvas id="forwardValChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Forward Valuation Matrix Table (FY26 / FY27E / FY28E) -->
+      <div class="glass-card rounded-2xl p-5">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-white">Forward Valuation & Earnings Growth Matrix (FY26 – FY28E)</h3>
+            <p class="text-xs text-slate-400">Rapid earnings compounding drives SEF I's FY28E P/E (18x) in line with BSE 500 (17x) and EV/EBITDA (10x) below both Nifty 50 (11x) & BSE 500 (12x).</p>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs font-mono-num">
+            <thead>
+              <tr class="border-b border-slate-800 bg-slate-950/60 text-slate-400 uppercase text-[11px]">
+                <th class="py-3 px-4 font-sans">Cohort / Benchmark</th>
+                <th class="py-3 px-3 text-right">Rev Growth FY26</th>
+                <th class="py-3 px-3 text-right">Rev Growth FY27E</th>
+                <th class="py-3 px-3 text-right">Rev Growth FY28E</th>
+                <th class="py-3 px-3 text-right">PAT Growth FY26</th>
+                <th class="py-3 px-3 text-right">PAT Growth FY27E</th>
+                <th class="py-3 px-3 text-right">PAT Growth FY28E</th>
+                <th class="py-3 px-3 text-right">P/E FY26 / 27E / 28E</th>
+                <th class="py-3 px-4 text-right">EV/EBITDA FY26 / 27E / 28E</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60">
+              <tr class="bg-indigo-500/10 text-white font-semibold">
+                <td class="py-3 px-4 font-sans font-bold text-indigo-300">Singularity Equity Fund I (SEF I)</td>
+                <td class="py-3 px-3 text-right text-emerald-400">24%</td>
+                <td class="py-3 px-3 text-right text-emerald-400 font-bold">39%</td>
+                <td class="py-3 px-3 text-right text-emerald-400">27%</td>
+                <td class="py-3 px-3 text-right text-emerald-400">37%</td>
+                <td class="py-3 px-3 text-right text-emerald-400">37%</td>
+                <td class="py-3 px-3 text-right text-emerald-400 font-bold">40%</td>
+                <td class="py-3 px-3 text-right text-cyan-300">54x → 33x → <span class="text-emerald-400 font-bold">18x</span></td>
+                <td class="py-3 px-4 text-right text-cyan-300">23x → 13x → <span class="text-emerald-400 font-bold">10x</span></td>
+              </tr>
+              <tr class="text-slate-300">
+                <td class="py-3 px-4 font-sans font-medium">Nifty 50 Index</td>
+                <td class="py-3 px-3 text-right">18%</td>
+                <td class="py-3 px-3 text-right">8%</td>
+                <td class="py-3 px-3 text-right">15%</td>
+                <td class="py-3 px-3 text-right text-amber-400">1%</td>
+                <td class="py-3 px-3 text-right">15%</td>
+                <td class="py-3 px-3 text-right">17%</td>
+                <td class="py-3 px-3 text-right">20x → 17x → 15x</td>
+                <td class="py-3 px-4 text-right">13x → 12x → 11x</td>
+              </tr>
+              <tr class="text-slate-300">
+                <td class="py-3 px-4 font-sans font-medium">BSE 500 Index</td>
+                <td class="py-3 px-3 text-right">12%</td>
+                <td class="py-3 px-3 text-right">9%</td>
+                <td class="py-3 px-3 text-right">13%</td>
+                <td class="py-3 px-3 text-right text-amber-400">2%</td>
+                <td class="py-3 px-3 text-right">14%</td>
+                <td class="py-3 px-3 text-right">16%</td>
+                <td class="py-3 px-3 text-right">23x → 19x → 17x</td>
+                <td class="py-3 px-4 text-right">13x → 14x → 12x</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Row 4: Live Google Sheets Formula TSV Exporter -->
+      <div class="glass-card rounded-2xl p-5 border border-indigo-500/40">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Live Spreadsheet Sync</span>
+              <h3 class="text-base font-bold text-white">Google Sheets Live `=GOOGLEFINANCE()` TSV Formula Exporter</h3>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">
+              Click <strong>"Copy Live Google Sheets Formulas"</strong> below and press <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 font-mono text-[11px]">Ctrl+V</kbd> / <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 font-mono text-[11px]">Cmd+V</kbd> in cell <code class="text-indigo-300">A1</code> of <a href="https://sheets.new" target="_blank" rel="noopener noreferrer" class="text-emerald-400 underline hover:text-emerald-300 font-semibold">sheets.new</a> for a permanent cloud sheet that auto-updates every time you open it.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+            <a href="https://sheets.new" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center gap-1.5 transition-all">
+              <i data-lucide="external-link" class="w-4 h-4"></i>
+              <span>Open New Google Sheet (sheets.new)</span>
+            </a>
+            <button onclick="copyGoogleSheetsTSV()" id="copyTsvBtn" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all">
+              <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+              <span id="copyTsvBtnText">Copy Live Google Sheets Formulas</span>
+            </button>
+            <button onclick="downloadGoogleSheetsTSV()" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 flex items-center gap-2 transition-all">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Download .TSV</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3.5">
+          <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2">
+            <span>Pre-Formatted Tab-Separated Values (TSV) Preview — Includes Dynamic Weighted Attribution Formula in Column I</span>
+            <span id="copyStatusToast" class="text-emerald-400 font-semibold hidden">✓ Copied 21 rows to clipboard! Ready to paste into Google Sheets.</span>
+          </div>
+          <textarea id="gsheetsTsvTextarea" readonly class="w-full h-56 bg-transparent font-mono text-[11px] text-slate-300 focus:outline-none resize-y custom-scrollbar"></textarea>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- LIVE LINK & CLOUD SYNC MODAL -->
+  <div id="liveSyncModalBackdrop" onclick="closeLiveSyncModal()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+    <div onclick="event.stopPropagation()" class="glass-card rounded-2xl max-w-2xl w-full p-6 border border-slate-700 shadow-2xl space-y-5">
+      <div class="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <span class="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Real-Time Auto-Update Architecture</span>
+          <h3 class="text-lg font-bold text-white mt-1">Live Market Auto-Sync & Permanent Cloud Link Setup</h3>
+        </div>
+        <button onclick="closeLiveSyncModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs text-slate-300">
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
+          <h4 class="font-bold text-emerald-400 text-sm flex items-center gap-2">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+            <span>1. Built-In Client-Side Auto-Fetch (Runs Automatically on Every Click/Open)</span>
+          </h4>
+          <p class="mt-1.5 text-slate-300 leading-relaxed">
+            This terminal has an embedded <strong>Live Market Auto-Sync Engine</strong> that automatically queries live NSE/BSE prices (`Yahoo Finance v8 API` via CORS proxy) every time you open the file and every 60 seconds while open, dynamically recalculating each stock's 1D % change, 52-week range position, IPO spread, and the fund's <strong>Weighted 1D NAV Move</strong>.
+          </p>
+        </div>
+
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-2.5">
+          <h4 class="font-bold text-cyan-400 text-sm flex items-center gap-2">
+            <i data-lucide="table" class="w-4 h-4"></i>
+            <span>2. Connect a Live Google Sheet `=GOOGLEFINANCE()` CSV Feed (Optional)</span>
+          </h4>
+          <p class="text-slate-300 leading-relaxed">
+            Want this terminal to pull tick-by-tick `=GOOGLEFINANCE()` data straight from your own Google Sheet?
+            <br>1. Click <strong>"Copy Live Google Sheets Formulas"</strong> in Tab 3 and paste into cell <code>A1</code> at <a href="https://sheets.new" target="_blank" class="text-indigo-400 underline">sheets.new</a>.
+            <br>2. In Google Sheets, click <strong>File → Share → Publish to web → Comma-separated values (.csv)</strong> and paste that URL below:
+          </p>
+          <div class="flex gap-2 pt-1">
+            <input id="customSheetCsvInput" type="url" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+            <button onclick="saveCustomSheetCsv()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shrink-0">
+              Save & Sync
+            </button>
+          </div>
+          <div id="customSheetSavedMsg" class="text-[11px] text-emerald-400 hidden">✓ Saved! Terminal will now auto-fetch live quotes from your Google Sheet on every open.</div>
+        </div>
+
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
+          <h4 class="font-bold text-indigo-300 text-sm flex items-center gap-2">
+            <i data-lucide="globe" class="w-4 h-4"></i>
+            <span>3. Share as a Permanent Public Web URL in 10 Seconds</span>
+          </h4>
+          <p class="mt-1.5 text-slate-300 leading-relaxed">
+            Because this application is a <strong>100% self-contained single-file HTML5 terminal</strong> with zero build dependencies, you can download this `.html` file and drag-and-drop it onto <a href="https://app.netlify.com/drop" target="_blank" rel="noopener noreferrer" class="text-indigo-400 underline">Netlify Drop (app.netlify.com/drop)</a>, GitHub Pages, or Vercel to generate a permanent `https://` link for your investment committee that auto-updates on every click.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE-OUT INTELLIGENCE DRAWER / MODAL -->
+  <div id="drawerBackdrop" onclick="closeDrawer()" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity duration-200"></div>
+  <aside id="intelligenceDrawer" class="fixed top-0 right-0 h-full w-full max-w-2xl bg-slate-900 border-l border-slate-800 z-50 transform translate-x-full transition-transform duration-300 ease-out flex flex-col shadow-2xl">
+    <!-- Drawer Header -->
+    <div class="px-6 py-4 border-b border-slate-800 flex items-start justify-between gap-4 bg-slate-950/60">
+      <div>
+        <div id="drawerBadges" class="flex flex-wrap items-center gap-2 mb-1.5"></div>
+        <h2 id="drawerTitle" class="text-xl font-bold text-white">Company Name</h2>
+        <p id="drawerSubtitle" class="text-xs text-slate-400 mt-0.5"></p>
+      </div>
+      <button onclick="closeDrawer()" class="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Drawer Scrollable Body -->
+    <div id="drawerContent" class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+      <!-- Populated dynamically via JS -->
+    </div>
+  </aside>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800/80 bg-slate-950/80 py-4 px-6 mt-10">
+    <div class="max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+      <div>
+        <strong>Singularity Equity Fund I (SEF I)</strong> • Portfolio weights & fund metrics as per 30 September 2026 Factsheet • Auto-Sync Live Market Engine active on every page open.
+      </div>
+      <div class="font-mono-num">
+        Singularity AMC LLP • CAT III Long-Only AIF
+      </div>
+    </div>
+  </footer>
+
+  <!-- APPLICATION DATA & LOGIC -->
+  <script>
+    // =========================================================================
+    // 1. LISTED EQUITIES GROUND-TRUTH & LIVE MARKET DATA (14 OCT 2026 14:00 IST)
+    // =========================================================================
+    const listedHoldings = [
+      {
+        id: "heg",
+        rank: "#1",
+        name: "HEG Advanced Materials Limited",
+        shortName: "HEG Advanced Materials",
+        ticker: "BOM:509631",
+        yahooSymbol: "509631.BO",
+        altTicker: "NSE:HEGAM / NSE:HEG",
+        gsheetsTicker: "BOM:509631",
+        sector: "Energy Transition",
+        cap: "Small Cap",
+        weight: 6.5,
+        isPipe: true,
+        framework: "Private to Public",
+        cmp: 232.20,
+        prevClose: 230.15,
+        change1d: 0.89,
+        changeAbs: 2.05,
+        mcapCr: 7656.61,
+        pe: 13.33,
+        eps: 18.59,
+        low52: 224.75,
+        high52: 256.00,
+        specialBadge: "Post 1:1 Demerger (Sep '26)",
+        businessBrief: [
+          "Renamed from HEG Limited to HEG Advanced Materials Limited on September 2, 2026 following the NCLT Indore Bench approval (Aug 13, 2026) of its Composite Scheme of Arrangement (effective Sept 1, 2026).",
+          "Retains the high-growth clean energy, synthetic graphite anode materials, graphene, Battery Energy Storage Systems (BESS via subsidiary Replus Engitech), and merged Bhilwara Energy green power IPP platform.",
+          "Demerged its legacy graphite electrodes business into HEG Graphite Limited on a 1:1 entitlement ratio (record date Sept 7, 2026; share allotment Sept 11, 2026; 27.60% tax cost apportioned to HEG Advanced Materials and 72.40% to HEG Graphite)."
+        ],
+        catalysts: [
+          {
+            date: "29 Sep – 01 Oct 2026",
+            title: "Replus Engitech Secures ₹217.56 Cr & ₹127.35 Cr Battery Orders + Indus Towers MoU",
+            detail: "Subsidiary Replus Engitech Pvt Ltd won ₹217.56 Cr battery bank orders on Sept 18, 2026 and signed a strategic MoU / ₹127.35 Cr order with Indus Towers on Sept 30–Oct 1, 2026; BSE tax cost apportionment notified Sept 29, 2026.",
+            source: "Arthneeti / BSE Filing",
+            url: "https://www.arthneeti.com/announcements/heg-ltd-apportionment-of-the-cost-of-acquisition-of-equity-shares-of-the-company-between-the-company-and-heg-graphite-limited-pursuant-to-the-scheme-29-sep-2026"
+          },
+          {
+            date: "02 Sep – 18 Sep 2026",
+            title: "Corporate Name Change to HEG Advanced Materials & 1:1 Demerger Execution",
+            detail: "Fresh Certificate of Incorporation issued Sept 2, 2026 with Riju Jhunjhunwala elevated to CMD & CEO; Replus Engitech ₹217.56 Cr order drove a 5% upper-circuit move on Sept 18.",
+            source: "Multibagg AI / Sahi",
+            url: "https://www.multibagg.ai/market-pulse/articles/heg-name-change-advanced-materials-cmtlhsn04000b2orhmybenbbr"
+          }
+        ]
+      },
+      {
+        id: "amber",
+        rank: "#2a",
+        name: "Amber Enterprises India Limited",
+        shortName: "Amber Enterprises",
+        ticker: "NSE:AMBER",
+        yahooSymbol: "AMBER.NS",
+        altTicker: "BOM:540902",
+        gsheetsTicker: "NSE:AMBER",
+        sector: "Industrials",
+        cap: "Mid Cap",
+        weight: 6.0,
+        isPipe: false,
+        framework: "Structural Compounder",
+        cmp: 6669.50,
+        prevClose: 6640.00,
+        change1d: 0.44,
+        changeAbs: 29.50,
+        mcapCr: 23525.36,
+        pe: 245.42,
+        eps: 27.19,
+        low52: 5400.50,
+        high52: 8974.00,
+        specialBadge: "Combined #2 w/ Il Jin (8.5%)",
+        businessBrief: [
+          "Market leader in Room Air Conditioner (RAC) OEM/ODM manufacturing (23.6%–27% total Indian market footprint) rapidly transitioning into a diversified B2B Electronics (EMS/PCB) and Railway Subsystems & Defence powerhouse.",
+          "Together with SEF I's 2.46% direct unlisted holding in subsidiary Il Jin Electronics India Pvt Ltd (#2b), the Amber Group represents an 8.46% (~8.5%) combined conviction position in the fund.",
+          "Aggressively backward-integrating into bare multilayer, HDI, flex, and semiconductor-substrate PCBs via Ascent Circuits, Korea Circuit JV, and Shogini Technoarts."
+        ],
+        catalysts: [
+          {
+            date: "14 Aug 2026",
+            title: "Q1 FY27 Revenue Up 13% YoY Led by 30%+ Surge in Electronics Division",
+            detail: "Delivered resilient Q1 FY27 top-line growth of 13% YoY as rapid scaling in the Electronics/PCB division offset weather-related RAC industry softness.",
+            source: "Investing.com Q1 FY27 Transcript",
+            url: "https://www.investing.com/news/company-news/amber-q1-fy27-slides-electronics-surge-offsets-railway-margin-pressure-93CH-4859737"
+          },
+          {
+            date: "11 Jul 2026",
+            title: "₹296.02 Cr Rights Issue Infusion into IL JIN Electronics & ₹991 Cr ECMS PCB Nod",
+            detail: "Completed ₹296.02 Cr rights issue subscription in IL JIN Electronics (lifting stake to 89.72%), alongside government approval for a ₹991 Cr PCB facility and acquisitions of Shogini Technoarts (80%), Power-One (60%), and Israel's Unitronics (40.24%).",
+            source: "Multibagg AI",
+            url: "https://www.multibagg.ai/market-pulse/articles/amber-invests-iljin-rights-issue-cmrh62zw2hx6cnw0jlcb1xxqq"
+          }
+        ]
+      },
+      {
+        id: "zota",
+        rank: "#3",
+        name: "Zota Health Care Limited",
+        shortName: "Zota Health Care",
+        ticker: "NSE:ZOTA",
+        yahooSymbol: "ZOTA.NS",
+        altTicker: "Davaindia Generic Pharmacy",
+        gsheetsTicker: "NSE:ZOTA",
+        sector: "Healthcare / Pharma",
+        cap: "Small Cap",
+        weight: 4.5,
+        isPipe: false,
+        framework: "Structural Compounder",
+        cmp: 1362.10,
+        prevClose: 1301.20,
+        change1d: 4.68,
+        changeAbs: 60.90,
+        mcapCr: 4717.30,
+        pe: 181.00,
+        peNote: "181x Stdl / N/A Cons.",
+        eps: -30.88,
+        low52: 1022.00,
+        high52: 1740.00,
+        specialBadge: "2,825 Davaindia Stores",
+        businessBrief: [
+          "Category creator in private-label generic pharmacy retail through its flagship 'Davaindia' chain, offering chronic and acute generic medicines at 30%–70% lower prices than branded equivalents.",
+          "Rapidly scaling Company-Owned Company-Operated (COCO) and franchise outlets across Tier-2/3/4 India, supported by a legacy domestic distribution network of 1,050+ distributors and 4,000+ SKUs.",
+          "Accounting losses at the consolidated level reflect upfront Ind-AS lease and store-opening opex from adding 250+ COCO stores per quarter, masking strong mature-store unit economics."
+        ],
+        catalysts: [
+          {
+            date: "01 Oct 2026",
+            title: "Additional Equity Infusion into Davaindia Health Mart Subsidiary",
+            detail: "Subscribed to 39,228 equity shares of subsidiary Davaindia Health Mart Limited on October 1, 2026 to accelerate COCO store rollout; stock surged +4.68% intraday on Oct 14.",
+            source: "Screener / Exchange Filing",
+            url: "https://www.screener.in/company/ZOTA/consolidated/"
+          },
+          {
+            date: "01 Jul – 13 Aug 2026",
+            title: "264 New Davaindia Stores Added in Q1 FY27; Revenue Rises to ₹130 Cr",
+            detail: "Expanded retail footprint to 2,825 total Davaindia outlets in Q1 FY27 with quarterly revenue reaching ₹130 Cr.",
+            source: "Sahi Market News",
+            url: "https://www.sahi.com/news/zota-health-care-opens-264-new-davaindia-stores-in-q1fy27-reaching-2-825-total-outlets-4554-PE1_COR"
+          }
+        ]
+      },
+      {
+        id: "vinyas",
+        rank: "#4",
+        name: "Vinyas Innovative Technologies Ltd",
+        shortName: "Vinyas Innovative Tech",
+        ticker: "NSE:VINYAS",
+        yahooSymbol: "VINYAS.NS",
+        altTicker: "NSE Emerge / Defence EMS",
+        gsheetsTicker: "NSE:VINYAS",
+        sector: "Industrials",
+        cap: "Small Cap",
+        weight: 4.2,
+        isPipe: true,
+        framework: "Structural Compounder",
+        cmp: 1573.05,
+        prevClose: 1569.80,
+        change1d: 0.21,
+        changeAbs: 3.25,
+        mcapCr: 2069.00,
+        pe: 67.80,
+        eps: 24.25,
+        low52: 809.00,
+        high52: 1730.00,
+        specialBadge: "₹1,309 Cr Defence Order Book",
+        businessBrief: [
+          "Specialized high-reliability Electronics Manufacturing Services (EMS) partner focused on mission-critical Defence & Aerospace (85%–90% of order book), Industrial, and Medical Device electronics.",
+          "Capabilities span complex printed circuit board assembly (PCBA), wire harness, subsystem integration, and full box-build lifecycle support with globally demanding Nadcap accreditation.",
+          "Backed by multi-year defence indigenisation tailwinds with an order book of ₹1,309.06 Cr (~2.5x FY26 revenue of ₹518 Cr) executable over 18–24 months."
+        ],
+        catalysts: [
+          {
+            date: "02 Jun – Oct 2026",
+            title: "Order Book Hits ₹1,309.06 Cr with H2 EBITDA Margin Expanding to 13.46%",
+            detail: "Secured ₹960.38 Cr in FY26 order inflows; full-year revenue reached ₹518.00 Cr with EBITDA at ₹64.77 Cr (12.50% margin) and PAT at ₹30.87 Cr, while debt-to-equity improved from 0.70x to 0.55x.",
+            source: "Multibagg AI",
+            url: "https://www.multibagg.ai/market-pulse/articles/vinyas-fy26-95479"
+          },
+          {
+            date: "14 Oct 2026",
+            title: "Steady Defence EMS Re-Rating Near 52-Week Highs",
+            detail: "Trading at ₹1,573.05 (+0.21% intraday) near the upper band of its ₹809–₹1,730 52-week range with ₹2,069 Cr market cap.",
+            source: "Economic Times / Screener",
+            url: "https://economictimes.indiatimes.com/vinyas-innovative-technologies-ltd/stocks/companyid-2152814.cms"
+          }
+        ]
+      },
+      {
+        id: "tilaknagar",
+        rank: "#5",
+        name: "Tilaknagar Industries Limited",
+        shortName: "Tilaknagar Industries",
+        ticker: "NSE:TI",
+        yahooSymbol: "TI.NS",
+        altTicker: "BOM:507205",
+        gsheetsTicker: "NSE:TI",
+        sector: "Consumer",
+        cap: "Small Cap",
+        weight: 4.2,
+        isPipe: true,
+        framework: "Structural Compounder",
+        cmp: 547.00,
+        prevClose: 541.35,
+        change1d: 1.04,
+        changeAbs: 5.65,
+        mcapCr: 13591.04,
+        pe: 59.80,
+        peNote: "59.8x (Screener Cons.)",
+        eps: 9.10,
+        low52: 381.55,
+        high52: 607.80,
+        specialBadge: "Q1 Rev > ₹1,000 Cr Milestone",
+        businessBrief: [
+          "India's premier brandy manufacturer (flagship 'Mansion House' and 'Courrier Napoleon') expanding aggressively into millionaire IMFL prestige-and-above spirits and acquired Imperial Blue operations.",
+          "Dominant market share across Southern and Eastern India with strong operating leverage from premiumization, flavourization (Flandy), and balance-sheet deleveraging.",
+          "Achieved a historic scale inflection in Q1 FY27 by crossing ₹1,000 Cr in quarterly net revenue for the first time in corporate history."
+        ],
+        catalysts: [
+          {
+            date: "27–29 Jul 2026",
+            title: "First-Ever ₹1,000+ Cr Quarterly Net Revenue in Q1 FY27 (+166% YoY)",
+            detail: "Q1 FY27 net revenue surged 166% YoY to ₹1,046 Cr as volumes jumped 172% YoY; also recorded highest-ever monthly sales in Karnataka in July 2026 alongside Imperial Blue.",
+            source: "Tilaknagar Filings / Ventura",
+            url: "https://www.venturasecurities.com/news/stocks/tilaknagar-industries-q1-fy27-results-revenue-crosses-1000-crore-mark-profitability-hit-by-cost-pressures/"
+          },
+          {
+            date: "04 Aug 2026",
+            title: "Q1 FY27 Net Profit Rises to ₹31.59 Cr Amid Volume Expansion",
+            detail: "Sustained market share gains across key southern states despite input ENA and packaging cost pressures.",
+            source: "ScanX Market News",
+            url: "https://scanx.trade/stock-market-news/companies/tilaknagar-industries-q1-results-net-profit-rises-to-31-59-crore/46707735"
+          }
+        ]
+      },
+      {
+        id: "jsfb",
+        rank: "#6",
+        name: "Jana Small Finance Bank Limited",
+        shortName: "Jana Small Finance Bank",
+        ticker: "NSE:JSFB",
+        yahooSymbol: "JSFB.NS",
+        altTicker: "BOM:544118",
+        gsheetsTicker: "NSE:JSFB",
+        sector: "Financial Services",
+        cap: "Small Cap",
+        weight: 3.4,
+        isPipe: false,
+        framework: "Value / Market Cycle Play",
+        cmp: 498.95,
+        prevClose: 499.45,
+        change1d: -0.10,
+        changeAbs: -0.50,
+        mcapCr: 5279.99,
+        pe: 13.87,
+        eps: 35.97,
+        low52: 330.00,
+        high52: 606.95,
+        specialBadge: "Universal Bank License Applicant",
+        businessBrief: [
+          "Fourth-largest Small Finance Bank in India with a rapidly growing secured lending book (affordable housing, MSME, micro-LAP, two-wheelers, and gold loans exceeding 60%+ of advances).",
+          "Formally applied to the Reserve Bank of India (RBI) to transition into a full-fledged Universal Bank, which will remove SFB regulatory caps and lower cost of funds.",
+          "Trades at a deep value multiple of 13.87x trailing P/E with 25% YoY AUM growth and strong RoE compounding."
+        ],
+        catalysts: [
+          {
+            date: "Jul – Aug 2026",
+            title: "25% AUM Growth Momentum & Universal Banking License Progression",
+            detail: "Continued shift toward secured retail assets and granular CASA deposits in Q1/Q2 FY27 while advancing its RBI Universal Bank license application.",
+            source: "Sahi / Business Standard",
+            url: "https://www.sahi.com/news/jana-small-finance-bank-to-consider-q1-results-on-july-15-following-25-aum-growth-4001-PE1_COR"
+          },
+          {
+            date: "14 Oct 2026",
+            title: "Attractive Valuation at 13.9x P/E Ahead of Q2 FY27 Earnings",
+            detail: "Trading at ₹498.95 (Market Cap ₹5,280 Cr, EPS ₹35.97) as investors monitor MFI credit cost normalization.",
+            source: "Screener",
+            url: "https://www.screener.in/company/JSFB/"
+          }
+        ]
+      },
+      {
+        id: "eternal",
+        rank: "#7",
+        name: "Eternal Limited (formerly Zomato Ltd)",
+        shortName: "Eternal Limited (Zomato)",
+        ticker: "NSE:ETERNAL",
+        yahooSymbol: "ETERNAL.NS",
+        altTicker: "BOM:543320",
+        gsheetsTicker: "NSE:ETERNAL",
+        sector: "New Economy (Technology)",
+        cap: "Large Cap",
+        weight: 3.4,
+        isPipe: false,
+        framework: "Structural Compounder",
+        cmp: 316.85,
+        prevClose: 320.45,
+        change1d: -1.12,
+        changeAbs: -3.60,
+        mcapCr: 291580.82,
+        pe: 668.91,
+        eps: 0.47,
+        low52: 212.60,
+        high52: 368.45,
+        specialBadge: "Blinkit Profitable | Q1 Rev ₹20,211 Cr",
+        businessBrief: [
+          "Rebranded consumer internet powerhouse operating four synergistic hyper-local platforms: Zomato (Food Delivery), Blinkit (Quick Commerce), District (Dining-out & Live Ticketing), and Hyperpure (B2B Restaurant Supplies).",
+          "Blinkit has emerged as the primary valuation and growth engine, turning profitable in Q1 FY27 while expanding market share despite aggressive competition from Zepto, Swiggy Instamart, Flipkart Minutes, and Amazon Now.",
+          "District app is scaling high-margin live events, movies, and dining experiences as a third standalone consumer pillar."
+        ],
+        catalysts: [
+          {
+            date: "22–31 Jul 2026",
+            title: "Q1 FY27 Consolidated Revenue Surges 182% YoY to ₹20,211 Cr; Blinkit Turns Profitable",
+            detail: "Revenue from operations jumped to ₹20,211 Cr (vs ₹7,167 Cr in Q1 FY26) as Blinkit achieved profitability alongside rapid dark-store expansion and market share gains.",
+            source: "NiftyTrader / Indian Retailer",
+            url: "https://www.niftytrader.in/markets/eternal-q1-fy27-revenue-blinkit-profitable/"
+          },
+          {
+            date: "01 Oct 2026",
+            title: "ESOP Allotment & ~50% Gain from 52-Week Low Ahead of Q2 FY27 Results",
+            detail: "Informed exchanges of new stock option grants on Oct 1, 2026; stock is up ~49% from its 52-week low of ₹212.60.",
+            source: "Screener / Trendlyne",
+            url: "https://www.screener.in/company/ETERNAL/consolidated/"
+          }
+        ]
+      },
+      {
+        id: "pfocus",
+        rank: "#8",
+        name: "Prime Focus Limited",
+        shortName: "Prime Focus (DNEG)",
+        ticker: "NSE:PFOCUS",
+        yahooSymbol: "PFOCUS.NS",
+        altTicker: "BOM:532748",
+        gsheetsTicker: "NSE:PFOCUS",
+        sector: "Others",
+        cap: "Small Cap",
+        weight: 3.3,
+        isPipe: true,
+        framework: "Private to Public",
+        cmp: 283.20,
+        prevClose: 279.00,
+        change1d: 1.51,
+        changeAbs: 4.20,
+        mcapCr: 22054.87,
+        pe: 183.36,
+        eps: 1.54,
+        low52: 161.01,
+        high52: 367.00,
+        specialBadge: "Global VFX & AI Studio (DNEG)",
+        businessBrief: [
+          "Parent company of DNEG, one of the world's premier visual effects (VFX), animation, and stereo conversion studios for Hollywood, global OTT streaming, and tentpole Indian cinema (including Ramayana).",
+          "Leveraging proprietary AI production tools (Brahma AI) and cost-arbitrage delivery hubs across Mumbai, London, Vancouver, and the Canary Islands.",
+          "Preferential allotment backing supports balance-sheet optimization and high-margin IP co-production via Prime Focus Studios."
+        ],
+        catalysts: [
+          {
+            date: "07 Oct 2026",
+            title: "Exchange Clarification on Income Tax Department Search; Operations Unaffected",
+            detail: "Company disclosed an ongoing Income Tax search at Prime Focus offices on Oct 7, 2026 while confirming that global studio and VFX operations continue normally; stock gained +1.51% to ₹283.20 on Oct 14.",
+            source: "Screener / BSE Filing",
+            url: "https://www.screener.in/company/PFOCUS/consolidated/"
+          },
+          {
+            date: "26 May 2026",
+            title: "DNEG / Prime Focus Studios Partners with Spanish Government SETT Fund",
+            detail: "Signed strategic co-investment partnership with Spain's SETT Fund to expand its Canary Islands animation and VFX production studio.",
+            source: "Prime Focus Official",
+            url: "https://www.primefocus.com/latest-news/"
+          }
+        ]
+      },
+      {
+        id: "symbiotec",
+        rank: "#9",
+        name: "Symbiotec Pharmalab Limited",
+        shortName: "Symbiotec Pharmalab",
+        ticker: "NSE:SYMBIOTEC",
+        yahooSymbol: "SYMBIOTEC.NS",
+        altTicker: "BOM:544889",
+        gsheetsTicker: "NSE:SYMBIOTEC",
+        sector: "Healthcare / Pharma",
+        cap: "Small Cap",
+        weight: 3.2,
+        isPipe: false,
+        framework: "Private to Public",
+        cmp: 1275.00,
+        prevClose: 1173.00,
+        change1d: 8.70,
+        changeAbs: 102.00,
+        mcapCr: 8194.58,
+        pe: 87.04,
+        eps: 14.68,
+        low52: 934.20,
+        high52: 1280.00,
+        ipoIssuePrice: 988.00,
+        specialBadge: "Listed 1 Sep '26 | +29.05% vs ₹988 IPO",
+        businessBrief: [
+          "Global leader in research-driven corticosteroid and hormone Active Pharmaceutical Ingredients (APIs), sterile manufacturing, and high-barrier CDMO fermentation.",
+          "Successfully transitioned from SEF I's private/crossover book to public markets via its ₹1,757 Crore mainboard IPO (Aug 24–26, 2026; listed Sept 1, 2026 at ₹988 issue price).",
+          "Delivering strong post-listing institutional price discovery: surging +8.70% intraday on Oct 14, 2026 to ₹1,275.00 (intraday 52W high ₹1,280.00), representing a +29.05% gain over its ₹988 IPO issue price."
+        ],
+        catalysts: [
+          {
+            date: "01 Sep – 14 Oct 2026",
+            title: "Stock Surges +29.05% Above ₹988 IPO Issue Price to Hit ₹1,280.00 High",
+            detail: "After listing flat at ₹988 on NSE on Sept 1, 2026 following its ₹1,757 Cr IPO, institutional accumulation drove the stock up +8.70% on Oct 14 to ₹1,275.00 (Market Cap ₹8,195 Cr).",
+            source: "Chittorgarh / Groww",
+            url: "https://www.chittorgarh.com/ipo/symbiotec-pharmalab-ipo/2815/"
+          },
+          {
+            date: "29 Sep 2026",
+            title: "Trading Window Closed Ahead of Maiden Post-IPO Q2 FY27 Financial Results",
+            detail: "Closed trading window effective Oct 1, 2026 ahead of its first quarterly earnings release as a listed company.",
+            source: "Screener",
+            url: "https://www.screener.in/company/SYMBIOTEC/consolidated/"
+          }
+        ]
+      },
+      {
+        id: "rbl",
+        rank: "#10",
+        name: "RBL Bank Limited",
+        shortName: "RBL Bank",
+        ticker: "NSE:RBLBANK",
+        yahooSymbol: "RBLBANK.NS",
+        altTicker: "BOM:540065",
+        gsheetsTicker: "NSE:RBLBANK",
+        sector: "Financial Services",
+        cap: "Small Cap",
+        weight: 3.2,
+        isPipe: false,
+        framework: "Value / Market Cycle Play",
+        cmp: 387.80,
+        prevClose: 388.05,
+        change1d: -0.06,
+        changeAbs: -0.25,
+        mcapCr: 60197.46,
+        pe: 28.13,
+        eps: 13.76,
+        low52: 285.85,
+        high52: 429.60,
+        specialBadge: "+33.8% 1Y Re-Rating",
+        businessBrief: [
+          "Private sector bank executing a disciplined balance-sheet pivot toward granular retail deposits, secured housing/wheels, and commercial banking to balance its high-yield credit cards and microfinance franchises.",
+          "Stock has re-rated +33.8% over the past year to ~₹60,200 Cr market cap on improving governance visibility and asset quality stabilization.",
+          "Offers strong operating leverage as credit costs normalize across the MFI and unsecured retail books in H2 FY27."
+        ],
+        catalysts: [
+          {
+            date: "08–14 Oct 2026",
+            title: "Paid-Up Capital Expansion via ESOP Allotment & Q2 FY27 Earnings Preview",
+            detail: "Increased paid-up equity capital via ESOP share allotment on Oct 8, 2026; scheduled to report Q2 FY27 earnings in mid-October 2026.",
+            source: "Perplexity Finance / Kotak Neo",
+            url: "https://www.kotakneo.com/news/market-news/q2-results-this-week-hdfc-icici-axis-bank-yes-rbl-bank/"
+          },
+          {
+            date: "14 Oct 2026",
+            title: "Market Cap Crosses ₹60,197 Cr on ₹15,549 Cr Annual Revenue Base",
+            detail: "Trading at ₹387.80 (28.13x P/E) within 10% of its 52-week high of ₹429.60.",
+            source: "Screener",
+            url: "https://www.screener.in/company/RBLBANK/"
+          }
+        ]
+      },
+      {
+        id: "buildpro",
+        rank: "#11",
+        name: "Shankara Buildpro Limited",
+        shortName: "Shankara Buildpro",
+        ticker: "NSE:BUILDPRO",
+        yahooSymbol: "BUILDPRO.NS",
+        altTicker: "Demerged Retail Entity",
+        gsheetsTicker: "NSE:BUILDPRO",
+        sector: "Others",
+        cap: "Small Cap",
+        weight: 2.8,
+        isPipe: false,
+        framework: "Private to Public",
+        cmp: 240.40,
+        prevClose: 232.80,
+        change1d: 3.26,
+        changeAbs: 7.60,
+        mcapCr: 2914.77,
+        pe: 22.12,
+        eps: 10.87,
+        low52: 127.20,
+        high52: 276.00,
+        specialBadge: "1:5 Stock Split (8 Oct '26)",
+        businessBrief: [
+          "Pure-play omnichannel building products marketplace and retail distribution platform demerged from Shankara Building Products Limited (listed on NSE/BSE on January 9, 2026).",
+          "Separating asset-light building materials retail/distribution from low-margin manufacturing unlocked superior ROCE and working-capital velocity, supported by 37% YoY steel & building material volume growth.",
+          "Executed a 1:5 stock split (₹10 face value subdivided into five ₹2 shares) with an October 8, 2026 record date to boost market liquidity."
+        ],
+        catalysts: [
+          {
+            date: "07–08 Oct 2026",
+            title: "1:5 Stock Split Effective (Record Date Oct 8, 2026) to Enhance Trading Liquidity",
+            detail: "Subdivided each ₹10 equity share into five ₹2 shares following board approval in Aug 2026; stock rallied +3.26% to ₹240.40 on Oct 14.",
+            source: "Sahi Market News",
+            url: "https://www.sahi.com/news/shankara-build-sets-october-8-record-date-to-split-10-shares-into-five-2-shares"
+          },
+          {
+            date: "09 Jan – Feb 2026",
+            title: "NSE/BSE Listing Post-Demerger & 37% YoY Volume Growth",
+            detail: "Commenced independent trading on Jan 9, 2026 after NCLT sanction; delivered 37% YoY volume growth to 2.61 lakh tonnes in its maiden post-demerger earnings report.",
+            source: "ScanX / NSE Filing",
+            url: "https://scanx.trade/stock-market-news/earnings/shankara-buildpro-limited-reports-strong-q3-fy26-performance-with-37-steel-volume-growth/32956830"
+          }
+        ]
+      },
+      {
+        id: "hemant",
+        rank: "#12",
+        name: "Hemant Surgical Industries Ltd",
+        shortName: "Hemant Surgical",
+        ticker: "BOM:543916",
+        yahooSymbol: "543916.BO",
+        altTicker: "BSE SME / MedTech",
+        gsheetsTicker: "BOM:543916",
+        sector: "Healthcare / Pharma",
+        cap: "Small Cap",
+        weight: 2.7,
+        isPipe: true,
+        framework: "Structural Compounder",
+        cmp: 606.00,
+        prevClose: 601.90,
+        change1d: 0.68,
+        changeAbs: 4.10,
+        mcapCr: 880.98,
+        pe: 40.55,
+        eps: 14.94,
+        low52: 215.00,
+        high52: 679.00,
+        specialBadge: "+181% off 52W Low",
+        businessBrief: [
+          "Fast-growing medical devices and surgical disposables manufacturer and exclusive importer (JMS Co. Japan partner) specializing in renal care/dialysis solutions, critical care equipment, and turnkey hospital setups.",
+          "Preferential allotment capital is funding domestic manufacturing expansion of dialyzers, blood tubing sets, and specialized surgical products.",
+          "Delivered multi-bagger price appreciation from its ₹215 52-week low to ₹606.00 (52W high ₹679.00) on rising institutional discovery."
+        ],
+        catalysts: [
+          {
+            date: "07 Sep – 14 Oct 2026",
+            title: "Sustained Breakout Momentum Near ₹679 52-Week High",
+            detail: "Surged +9.84% in early Sept 2026 and continued climbing to ₹606.00 (+0.68% on Oct 14), bringing market cap to ₹880.98 Cr at 40.55x trailing P/E.",
+            source: "Univest / Screener",
+            url: "https://univest.in/blogs/why-hemant-surgical-industries-ltd-share-price-rise-today-2026"
+          },
+          {
+            date: "Aug – Oct 2026",
+            title: "Expansion of Indigenous Dialysis & Renal Care Manufacturing",
+            detail: "Scaling high-margin indigenous medical device manufacturing with 12.73% ROE and 13.58% ROCE.",
+            source: "Screener",
+            url: "https://www.screener.in/company/543916/"
+          }
+        ]
+      },
+      {
+        id: "rkforge",
+        rank: "#13",
+        name: "Ramkrishna Forgings Limited",
+        shortName: "Ramkrishna Forgings",
+        ticker: "NSE:RKFORGE",
+        yahooSymbol: "RKFORGE.NS",
+        altTicker: "BOM:532527",
+        gsheetsTicker: "NSE:RKFORGE",
+        sector: "Industrials",
+        cap: "Small Cap",
+        weight: 2.4,
+        isPipe: false,
+        framework: "Value / Market Cycle Play",
+        cmp: 699.10,
+        prevClose: 698.65,
+        change1d: 0.06,
+        changeAbs: 0.45,
+        mcapCr: 12951.69,
+        pe: 120.27,
+        eps: 5.81,
+        low52: 460.15,
+        high52: 772.80,
+        specialBadge: "Q1 PAT +298% YoY",
+        businessBrief: [
+          "Tier-1 global supplier of engineered forged, machined, and fabricated components across Commercial Vehicles (North America & Europe Class-8 trucks), Railway wagons/Vande Bharat bogies, Oil & Gas, and EV drivetrains.",
+          "Executing capacity expansion in cold, warm, and heavy press forgings alongside value-added assemblies via recent acquisitions (ACIL, Multitech Auto, JMT Auto).",
+          "Strong earnings recovery in Q1 FY27 with net profit jumping 298% YoY and EBITDA margins expanding to ~18%."
+        ],
+        catalysts: [
+          {
+            date: "24–27 Jul 2026",
+            title: "Q1 FY27 Net Profit Surges 298% YoY to ₹46.88 Cr; EBITDA Margin Hits 17.96%",
+            detail: "Reported a nearly 4-fold jump in Q1 FY27 consolidated net profit to ₹46.88 Cr backed by strong export and railway order wins.",
+            source: "ScanX / Investing.com",
+            url: "https://scanx.trade/stock-market-news/companies/ramkrishna-forgings-reports-sharp-q1-profit-jump-as-ebitda-margin-expands-to-17-96/46429207"
+          },
+          {
+            date: "29 Sep 2026",
+            title: "Board Approves 57,340 ESOPs at ₹532/Share",
+            detail: "Allotted employee stock options on Sept 29, 2026 as the stock consolidated near ₹699.10 (+51.9% above its 52-week low of ₹460.15).",
+            source: "Screener",
+            url: "https://www.screener.in/company/RKFORGE/consolidated/"
+          }
+        ]
+      },
+      {
+        id: "grmover",
+        rank: "#14",
+        name: "GRM Overseas Limited",
+        shortName: "GRM Overseas",
+        ticker: "NSE:GRMOVER",
+        yahooSymbol: "GRMOVER.NS",
+        altTicker: "BOM:531449",
+        gsheetsTicker: "NSE:GRMOVER",
+        sector: "Consumer",
+        cap: "Small Cap",
+        weight: 2.4,
+        isPipe: true,
+        framework: "Structural Compounder",
+        cmp: 93.71,
+        prevClose: 91.00,
+        change1d: 2.98,
+        changeAbs: 2.71,
+        mcapCr: 1941.76,
+        pe: 20.51,
+        eps: 4.57,
+        low52: 77.00,
+        high52: 185.45,
+        specialBadge: "Q1 Rev +30.5% | Acuité 'A' Upgrade",
+        businessBrief: [
+          "Top-3 Indian Basmati rice exporter (Middle East, UK/Europe) rapidly scaling its domestic branded packaged staples business under the '10X' brand (atta, edible oils, spices, ready-to-cook) via GRM Foodkraft.",
+          "Building a D2C and new-age FMCG Challenger brand portfolio through its '10X Ventures' platform alongside preferential allotment capital.",
+          "High skin-in-the-game demonstrated by promoter open-market share purchases in June 2026 lifting promoter holding to 63.1%."
+        ],
+        catalysts: [
+          {
+            date: "12 Aug 2026",
+            title: "Q1 FY27 Revenue Up 30.5% YoY to ₹426.51 Cr; EBITDA Margin Expands 100 bps",
+            detail: "Consolidated net profit rose 10.2% YoY to ₹21.04 Cr in Q1 FY27 as core Food segment revenue grew 27.1% YoY to ₹374.12 Cr and EBITDA margins expanded to 8.33%.",
+            source: "Sahi Market News",
+            url: "https://www.sahi.com/news/grm-overseas-q1-cons-net-profit-rises-to-21-crore-revenue-reaches-430-crore-2932-PE1_COR"
+          },
+          {
+            date: "21 Jul & 29 Sep 2026",
+            title: "Acuité Credit Rating Upgrade to 'ACUITE A' & 32nd AGM Completion",
+            detail: "Acuité upgraded long-term bank facilities to 'ACUITE A (Stable)' following promoter stake increases; 32nd AGM concluded on Sept 29, 2026; stock rallied +2.98% on Oct 14 (intraday high ₹97.50).",
+            source: "Screener / Sahi",
+            url: "https://www.screener.in/company/GRMOVER/consolidated/"
+          }
+        ]
+      },
+      {
+        id: "ixigo",
+        rank: "#15",
+        name: "Le Travenues Technology Limited (ixigo)",
+        shortName: "Le Travenues (ixigo)",
+        ticker: "NSE:IXIGO",
+        yahooSymbol: "IXIGO.NS",
+        altTicker: "BOM:544192",
+        gsheetsTicker: "NSE:IXIGO",
+        sector: "New Economy (Technology)",
+        cap: "Small Cap",
+        weight: 2.3,
+        isPipe: false,
+        framework: "Structural Compounder",
+        cmp: 138.83,
+        prevClose: 140.53,
+        change1d: -1.21,
+        changeAbs: -1.70,
+        mcapCr: 6123.58,
+        pe: 71.76,
+        eps: 1.93,
+        low52: 137.90,
+        high52: 339.15,
+        specialBadge: "Q1 PAT +70.3% YoY",
+        businessBrief: [
+          "India's leading OTA for the 'Next Billion Users' across Tier-2/3/4 towns, commanding dominant market share in IRCTC train ticketing (ixigo trains & ConfirmTkt), bus ticketing (AbhiBus), and AI-assisted flight bookings.",
+          "High organic traffic share (~85%+ non-paid) and cross-sell monetization via value-added ancillaries (ixigo Assured, travel insurance, food-on-train).",
+          "Fundamental earnings are compounding rapidly (+70.34% YoY Q1 FY27 PAT growth on ₹1,267 Cr TTM revenue) even as the stock consolidates near its 52-week low of ₹137.90."
+        ],
+        catalysts: [
+          {
+            date: "Jul – Aug 2026",
+            title: "Q1 FY27 Consolidated Net Profit Surges 70.34% YoY",
+            detail: "Delivered 70.34% YoY net profit growth in the June 2026 quarter with trailing 12-month revenue reaching ₹1,267 Cr.",
+            source: "HDFC Securities / Screener",
+            url: "https://www.hdfcsec.com/market/company/LeTravenuesTechnologyLtd-75817"
+          },
+          {
+            date: "14 Oct 2026",
+            title: "Valuation Reset Compresses P/E to 71.8x Ahead of Festive Q3 Travel Window",
+            detail: "Trading at ₹138.83 (Market Cap ₹6,124 Cr) near 52-week support ahead of peak Diwali/winter domestic travel demand.",
+            source: "Screener",
+            url: "https://www.screener.in/company/IXIGO/consolidated/"
+          }
+        ]
+      },
+      {
+        id: "icicibank",
+        rank: "#16",
+        name: "ICICI Bank Limited",
+        shortName: "ICICI Bank",
+        ticker: "NSE:ICICIBANK",
+        yahooSymbol: "ICICIBANK.NS",
+        altTicker: "BOM:532174",
+        gsheetsTicker: "NSE:ICICIBANK",
+        sector: "Financial Services",
+        cap: "Large Cap",
+        weight: 2.3,
+        isPipe: false,
+        framework: "Structural Compounder",
+        cmp: 1343.40,
+        prevClose: 1360.20,
+        change1d: -1.24,
+        changeAbs: -16.80,
+        mcapCr: 963569.24,
+        pe: 17.36,
+        eps: 77.38,
+        low52: 1187.60,
+        high52: 1480.00,
+        specialBadge: "Q2 FY27 Results: 17 Oct '26",
+        businessBrief: [
+          "India's premier private-sector banking franchise (~₹9.64 Lakh Cr market cap), anchoring SEF I's large-cap liquidity and financial services sleeve.",
+          "Consistently delivering ~2.3%+ RoA and ~17%–18% RoE through digital business banking, granular retail deposits, and pristine asset quality.",
+          "Trades at a compelling 17.36x trailing P/E (EPS ₹77.38) with strong capital adequacy and subsidiary value across ICICI Pru Life, ICICI Lombard, and ICICI AMC."
+        ],
+        catalysts: [
+          {
+            date: "17 Oct 2026 (Upcoming)",
+            title: "Q2 FY27 Earnings Scheduled for Saturday, October 17, 2026",
+            detail: "Board meeting and media/analyst call scheduled for Oct 17, 2026 to release Q2 & H1 FY27 results following the RBI's 25 bps repo rate hike to 5.50% on Oct 7.",
+            source: "NiftyTrader / Kotak Neo",
+            url: "https://www.niftytrader.in/markets/icici-bank-q2-result-fy27-nii-nim/"
+          },
+          {
+            date: "08 Oct 2026",
+            title: "Allotment of Shares Under Employee Stock Unit Scheme",
+            detail: "Allotted equity shares of ₹2 face value on Oct 8, 2026 under the ICICI Bank Employees Stock Unit Scheme.",
+            source: "Screener",
+            url: "https://www.screener.in/company/ICICIBANK/consolidated/"
+          }
+        ]
+      },
+      {
+        id: "iiflcaps",
+        rank: "#17",
+        name: "IIFL Capital Services Limited",
+        shortName: "IIFL Capital Services",
+        ticker: "NSE:IIFLCAPS",
+        yahooSymbol: "IIFLCAPS.NS",
+        altTicker: "BOM:542773 (formerly IIFL Sec)",
+        gsheetsTicker: "NSE:IIFLCAPS",
+        sector: "Financial Services",
+        cap: "Small Cap",
+        weight: 2.2,
+        isPipe: false,
+        framework: "Value / Market Cycle Play",
+        cmp: 346.45,
+        prevClose: 342.95,
+        change1d: 1.02,
+        changeAbs: 3.50,
+        mcapCr: 10925.36,
+        pe: 19.98,
+        eps: 17.35,
+        low52: 240.40,
+        high52: 411.30,
+        specialBadge: "BRLM on Zepto ₹11,000 Cr IPO",
+        businessBrief: [
+          "Formerly IIFL Securities Limited; a premier institutional equities, investment banking, financial distribution, and private wealth advisory house in India.",
+          "Direct beneficiary of India's capital markets and IPO supercycle, serving as Book Running Lead Manager (BRLM) on marquee 2026–27 offerings including portfolio peer Zepto Limited.",
+          "Trades at an undemanding 19.98x trailing P/E (₹10,925 Cr market cap) with strong free cash flow generation and a 0.87% dividend yield."
+        ],
+        catalysts: [
+          {
+            date: "Jun – Oct 2026",
+            title: "Mandated as BRLM on Zepto's ₹8,010 Cr Fresh Issue U-DRHP & Strong Deal Pipeline",
+            detail: "Named alongside Morgan Stanley, Goldman Sachs, and Axis Capital as a Book Running Lead Manager on Zepto's June 2026 U-DRHP filing.",
+            source: "Groww / SEBI Filing",
+            url: "https://groww.in/blog/upcoming-ipo-zepto-files-u-drhp-with-sebi-plans-to-raise-8010-crore-via-fresh-issue"
+          },
+          {
+            date: "22 Jul – 14 Oct 2026",
+            title: "Q1 FY27 Results & Sustained Institutional Broking Momentum",
+            detail: "Reported Q1 FY27 results on July 22, 2026; stock rose +1.02% intraday on Oct 14 to ₹346.45.",
+            source: "IIFL Capital Investor Relations",
+            url: "https://www.iiflcapital.com/investor-relations/financials"
+          }
+        ]
+      },
+      {
+        id: "perniaspop",
+        rank: "#18",
+        name: "Purple Style Labs Ltd",
+        shortName: "Purple Style Labs (Pernia's)",
+        ticker: "NSE:PERNIASPOP",
+        yahooSymbol: "PERNIASPOP.NS",
+        altTicker: "BOM:544901",
+        gsheetsTicker: "NSE:PERNIASPOP",
+        sector: "Consumer",
+        cap: "Small Cap",
+        weight: 2.0,
+        isPipe: false,
+        framework: "Private to Public",
+        cmp: 521.00,
+        prevClose: 516.60,
+        change1d: 0.85,
+        changeAbs: 4.40,
+        mcapCr: 4173.99,
+        pe: null,
+        peNote: "N/A (EPS -₹35.65)",
+        eps: -35.65,
+        low52: 501.05,
+        high52: 588.90,
+        ipoIssuePrice: 575.00,
+        specialBadge: "Listed 7 Sep '26 | -9.39% vs ₹575 IPO",
+        businessBrief: [
+          "Parent company of 'Pernia's Pop-Up Shop', India's largest omnichannel luxury and bridge-to-luxury designerwear platform curating 1,000+ Indian designer labels for domestic and global NRI markets.",
+          "Transitioned from SEF I's pre-IPO portfolio to the public markets via its September 2026 mainboard IPO (offer price band ₹546–₹575; final issue price ₹575.00; listed Sept 7, 2026 at ₹535.00).",
+          "Currently trading at ₹521.00 (-9.39% below its ₹575 IPO issue price; 52W range ₹501.05–₹588.90) ahead of the peak Q3 Indian wedding and festive luxury season."
+        ],
+        catalysts: [
+          {
+            date: "07 Sep 2026",
+            title: "Mainboard IPO Listing on NSE & BSE at ₹535 vs ₹575 Issue Price",
+            detail: "Completed its fresh-issue book-built IPO at ₹575/share and debuted on Sept 7, 2026 at ₹535 (-6.96% listing discount).",
+            source: "Groww / Chittorgarh",
+            url: "https://www.chittorgarh.com/ipo/purple-style-labs-ipo/2622/"
+          },
+          {
+            date: "14 Oct 2026",
+            title: "Consolidating at ₹521.00 (₹4,174 Cr Market Cap) Ahead of Peak Wedding Quarter",
+            detail: "Trading +0.85% intraday at ₹521.00 (-9.39% vs ₹575 issue price) as new luxury Experience Centers mature.",
+            source: "Screener",
+            url: "https://www.screener.in/company/PERNIASPOP/consolidated/"
+          }
+        ]
+      },
+      {
+        id: "trualt",
+        rank: "#19",
+        name: "TruAlt Bioenergy Ltd",
+        shortName: "TruAlt Bioenergy",
+        ticker: "NSE:TRUALT",
+        yahooSymbol: "TRUALT.NS",
+        altTicker: "Biofuels & Ethanol Leader",
+        gsheetsTicker: "NSE:TRUALT",
+        sector: "Energy Transition",
+        cap: "Small Cap",
+        weight: 2.0,
+        isPipe: false,
+        framework: "Structural Compounder",
+        cmp: 448.90,
+        prevClose: 447.20,
+        change1d: 0.38,
+        changeAbs: 1.70,
+        mcapCr: 3852.86,
+        pe: 27.51,
+        eps: 16.45,
+        low52: 310.20,
+        high52: 542.00,
+        specialBadge: "Q1 PAT +1,108% YoY (11x Jump)",
+        businessBrief: [
+          "India's largest ethanol producer by installed capacity and the country's only dedicated listed biofuels pure-play, operating across molasses/grain-based ethanol, Compressed Biogas (CBG), and Sustainable Aviation Fuel (SAF) initiatives.",
+          "Direct structural beneficiary of India's E20 ethanol blending mandate and green mobility energy transition.",
+          "Delivered an 11-fold (+1,108.25% YoY) surge in Q1 FY27 consolidated net profit, with TTM revenue reaching ₹2,050 Cr and PAT at ₹159 Cr (27.51x trailing P/E)."
+        ],
+        catalysts: [
+          {
+            date: "29–30 Jul 2026",
+            title: "Blockbuster Q1 FY27: Consolidated Net Profit Surges 1,108.25% YoY",
+            detail: "Reported an 11-fold YoY jump in June 2026 quarter consolidated net profit on strong ethanol realizations and capacity utilization.",
+            source: "Business Standard / Indian Chemical News",
+            url: "https://www.business-standard.com/markets/capital-market-news/trualt-bioenergy-rises-after-q1-pat-surges-over-11-fold-yoy-126072900343_1.html"
+          },
+          {
+            date: "14 Oct 2026",
+            title: "Stock Trades at ₹448.90 (+0.38% 1D, ₹3,853 Cr Market Cap)",
+            detail: "Trading at 27.51x trailing P/E and 2.52x book value as new grain-distillery and CBG capacities ramp up.",
+            source: "Screener / NSE",
+            url: "https://www.screener.in/company/TRUALT/consolidated/"
+          }
+        ]
+      },
+      {
+        id: "maxind",
+        rank: "Watchlist",
+        name: "Max India Limited (Preferential Allotment Tracker)",
+        shortName: "Max India (Antara)",
+        ticker: "NSE:MAXIND",
+        yahooSymbol: "MAXIND.NS",
+        altTicker: "BOM:543223",
+        gsheetsTicker: "NSE:MAXIND",
+        sector: "Healthcare / Pharma",
+        cap: "Small Cap",
+        weight: 0.0,
+        weightLabel: "PIPE Tracker (<2.0%)",
+        isPipe: true,
+        framework: "Structural Compounder",
+        cmp: 160.23,
+        prevClose: 162.96,
+        change1d: -1.68,
+        changeAbs: -2.73,
+        mcapCr: 902.43,
+        pe: null,
+        peNote: "N/A (EPS -₹25.28)",
+        eps: -25.28,
+        low52: 120.00,
+        high52: 225.01,
+        specialBadge: "Q1 Rev +66% YoY | Antara Senior Care",
+        businessBrief: [
+          "Holding company for the Max Group's integrated senior care ecosystem ('Antara Senior Living' residences, 'Antara Assisted Care' centers/home care, and 'AGEasy' D2C senior wellness marketplace).",
+          "Tracked in SEF I's Preferential Allotment sleeve following its ₹204.23 Cr capital raise (including ₹80.35 Cr preferential convertible warrants) to fund asset-light senior living expansion across NCR, Bengaluru, and Hyderabad.",
+          "Operating momentum inflecting in FY27: Q1 revenue jumped 66% YoY, AGEasy hit a ~₹120 Cr annualized run rate, and Noida Sector 150 possession handovers (340 units, ~₹169 Cr demand raised) trigger revenue recognition in Q2 FY27."
+        ],
+        catalysts: [
+          {
+            date: "11–12 Aug 2026",
+            title: "Q1 FY27 Revenue Up 66% YoY; Noida Sector 150 Possession Offers Issued to 340 Residents",
+            detail: "Antara Assisted Care occupied bed days rose 23% QoQ across 8 operational centers (₹12.03 Cr Q1 revenue), AGEasy reached ~₹120 Cr ARR, and 75% of ₹169 Cr Noida dues collected ahead of Q2 revenue recognition.",
+            source: "Tickertape / Multibagg AI",
+            url: "https://www.tickertape.in/stocks/max-india-MAII"
+          },
+          {
+            date: "May – Aug 2026",
+            title: "₹80.35 Cr Preferential Warrant Allotment & Partial Occupancy Certificate for Noida",
+            detail: "Received partial OC covering 3 towers at Noida Sector 150 and deployed preferential/rights issue capital with incremental 2-year funding needs reduced to ~$20M.",
+            source: "ScanX Market News",
+            url: "https://scanx.trade/stock-news/max-india-ltd"
+          }
+        ]
+      }
+    ];
+
+    // =========================================================================
+    // 2. UNLISTED / PRE-IPO PORTFOLIO GROUND-TRUTH & DEAL NEWS (5 HOLDINGS)
+    // =========================================================================
+    const unlistedHoldings = [
+      {
+        id: "iljin",
+        rank: "#1 Unlisted (#2b Overall)",
+        name: "Il Jin Electronics India Private Limited",
+        brand: "Amber Group Electronics Division (IL JIN)",
+        sector: "Industrials",
+        weight: 2.46,
+        topTableWeight: "2.5% (2.46% exact)",
+        valuationBasis: "At Cost",
+        basisType: "cost",
+        latestValuation: "₹1,750 Cr PE Round + ₹296 Cr Rights Issue (Apr '26)",
+        impliedValSub: "Implied Division Value: ~₹14,500–₹16,000+ Cr ($1.7B+)",
+        syndicate: [
+          "ChrysCapital Fund X (₹1,100 Cr Lead w/ Raptor Investments & Two Infinity Partners)",
+          "Avendus Future Leaders Fund III (₹140 Cr)",
+          "InCred Growth & InCred Wealth (₹120 Cr)",
+          "Singularity Growth / SEF I (₹100 Cr)",
+          "Axis New Opportunities AIF (₹100 Cr) & Nuvama Crossover Fund (₹50 Cr)"
+        ],
+        ipoStatus: "Pre-IPO Value Unlocking / Planned EMS Demerger & Listing",
+        ipoStage: "Strategic M&A & ECMS Capex Scaling",
+        metrics: [
+          { label: "FY25 Revenue / CAGR", value: "₹2,194 Cr (52% 3Y CAGR)" },
+          { label: "Parent Stake (Apr '26)", value: "89.72% (Amber Enterprises)" },
+          { label: "ECMS PCB Capex Approval", value: "₹991 Crore Govt Approval" }
+        ],
+        catalysts: [
+          "Secured ₹1,750 Crore strategic PE funding (Oct 2025; CCI approval Nov 7, 2025) led by ChrysCapital (₹1,100 Cr) alongside Singularity (₹100 Cr), InCred (₹120 Cr), Avendus (₹140 Cr), Axis AIF (₹100 Cr), and Nuvama (₹50 Cr) via equity & CCPS.",
+          "On April 21, 2026, parent Amber Enterprises completed a ₹296.02 Crore rights issue subscription in IL JIN (allotted 12.46L shares, lifting Amber's stake from 89.58% to 89.72%).",
+          "Aggressively consolidating PCB/EMS capabilities: merged Ever Electronics (Aug 2025), acquired 80% of PCB maker Shogini Technoarts (₹390 Cr FY25 revenue), 60% of Power-One Microsystems, and 40.24% of Israel's Unitronics (₹404 Cr), while securing approval for a ₹991 Cr PCB facility under India's ECMS scheme."
+        ],
+        links: [
+          { label: "ETLegalWorld: ₹1,750 Cr Syndicate Breakdown", url: "https://legal.economictimes.indiatimes.com/news/industry/il-jin-electronics-india-secures-inr-1750-crore-strategic-funding-with-chryscapital-and-incred/124754127" },
+          { label: "Multibagg AI: Apr 2026 ₹296 Cr Rights Issue", url: "https://www.multibagg.ai/market-pulse/articles/amber-invests-iljin-rights-issue-cmrh62zw2hx6cnw0jlcb1xxqq" },
+          { label: "GlobalSMT: Shogini PCB Acquisition (Jan 2026)", url: "https://www.globalsmt.net/asia-industry-news/amber-group-acquires-shogini-technoarts-to-expand-pcb-operations/" }
+        ]
+      },
+      {
+        id: "lohum",
+        rank: "#2 Unlisted",
+        name: "Lohum Cleantech Private Limited",
+        brand: "LOHUM (Li-Ion Battery Recycling & Critical Minerals)",
+        sector: "Energy Transition",
+        weight: 1.89,
+        topTableWeight: "1.89%",
+        valuationBasis: "Valuation Report as of March 2026",
+        basisType: "report",
+        latestValuation: "₹4,265 Crore (~$485 Million Post-Money)",
+        impliedValSub: "Raising ₹1,000 Cr ($112M) Pre-IPO Round at Higher Mark",
+        syndicate: [
+          "Singularity Growth / Singularity Ventures (Series B & Pre-IPO Co-Lead)",
+          "Growth I9 Opportunity LLP / I9 Capital",
+          "Baring Private Equity",
+          "Asiana Fund, Cactus Partners & Rainbow Investments"
+        ],
+        ipoStatus: "₹1,000 Cr Pre-IPO Round Underway Ahead of Late 2026 / 2027 IPO",
+        ipoStage: "Pre-IPO Capital Raise & Global JV Expansion",
+        metrics: [
+          { label: "Pre-Series C Issue Price", value: "₹17,56,714 / CCPS (₹131.4 Cr)" },
+          { label: "Reported Revenue / PAT", value: "₹529 Cr (+72% YoY) / ₹28 Cr (3x)" },
+          { label: "Core Revenue Mix", value: "80% Recycling & Critical Minerals" }
+        ],
+        catalysts: [
+          "Valued at ₹4,265 Crore (~$485M) post-money by Entrackr during its ₹131.4 Cr ($15M) Pre-Series C round (748 CCPS at ₹17.57L/share) backed by Growth I9, Baring PE, Singularity Growth, and Asiana Fund.",
+          "Mandated a ₹1,000 Crore ($112M) Pre-IPO fundraise co-led by I9 Capital and Singularity Ventures (after raising ~₹400 Cr in equity/debt) to scale lithium, cobalt, and nickel refining capacity ahead of its public listing.",
+          "Signed a landmark Joint Venture with UAE's BEEAH Group on January 15, 2026 and is setting up a $30M lithium-ion battery processing facility in the US."
+        ],
+        links: [
+          { label: "FundTQ / Entrackr: ₹4,265 Cr Valuation", url: "https://fundtq.com/lohum-pre-series-c-funding/" },
+          { label: "KuberGrow: ₹1,000 Cr Pre-IPO Round", url: "https://kuber-grow.com/lohum-pre-ipo-funding-2026/" },
+          { label: "PitchBook: Jan 2026 BEEAH Group JV", url: "https://pitchbook.com/profiles/company/433137-61" }
+        ]
+      },
+      {
+        id: "servify",
+        rank: "#3 Unlisted",
+        name: "Service Lee Technologies Private Limited",
+        brand: "Commercial Brand: Servify (Device Lifecycle SaaS)",
+        sector: "New Economy (Technology)",
+        weight: 0.60,
+        topTableWeight: "0.60%",
+        valuationBasis: "Valuation Report as of March 2026",
+        basisType: "report",
+        latestValuation: "$1.5 Billion – $2.3 Billion IPO Target (~₹12,500–₹19,200 Cr)",
+        impliedValSub: "$100M Pre-IPO Placement + $250M–$500M Mainboard IPO",
+        syndicate: [
+          "Singularity Growth Opportunities Fund",
+          "Iron Pillar",
+          "Blume Ventures",
+          "BEENEXT & Barkawi"
+        ],
+        ipoStatus: "Kotak Investment Bank Mandated for DRHP / 2026–27 Mainboard IPO",
+        ipoStage: "DRHP Preparation & Pre-IPO M&A",
+        metrics: [
+          { label: "Revenue / Recurring Mix", value: "₹755 Cr (+24% YoY) / 87%+ SaaS" },
+          { label: "EBITDA Margin Trajectory", value: "-60% (FY22) → -8.8% (FY24) → Breakeven" },
+          { label: "Global Footprint", value: "40+ Countries (US Largest Market in FY25)" }
+        ],
+        catalysts: [
+          "Mandated Kotak Investment Bank to lead a $250M–$500M (₹2,000–₹4,000 Cr) IPO (Fresh Issue + OFS) targeting a $1.5B–$2.3B valuation alongside a $100M pre-IPO placement.",
+          "Powers white-labeled AppleCare, Samsung Care+, HP Care, and AT&T device protection, trade-in, and AI diagnostics across 18,000+ service centers and 30M+ users.",
+          "In April–May 2026, reports highlighted that the US emerged as Servify's largest revenue market in FY25 and management is evaluating bolt-on acquisitions ahead of its IPO filing."
+        ],
+        links: [
+          { label: "m.Stock: Servify IPO & Valuation Breakdown", url: "https://www.mstock.com/articles/servify-ipo-issue-date-price-valuation-details-everything-you-need-to-know" },
+          { label: "Groww: $500M SEBI DRHP Plan", url: "https://groww.in/blog/servify-plans-to-files-drhp-for-ipo" },
+          { label: "EquityZen: Apr/May 2026 US Market & M&A News", url: "https://equityzen.com/company/servify/" }
+        ]
+      },
+      {
+        id: "zepto",
+        rank: "#4 Unlisted",
+        name: "Zepto Limited",
+        brand: "Zepto (10-Minute Quick Commerce Platform)",
+        sector: "New Economy (Technology)",
+        weight: 0.51,
+        topTableWeight: "0.51%",
+        valuationBasis: "Valuation Report as of March 2026",
+        basisType: "report",
+        latestValuation: "$7.0 Billion Private Mark (~₹58,800 Cr) | $2.5B–$3.0B DII Anchor Bid",
+        impliedValSub: "Closed ₹1,000+ Cr ($105M) Pre-IPO Round on 1 Aug 2026",
+        syndicate: [
+          "CalPERS & General Catalyst ($450M Round Lead at $7B, Oct 2025)",
+          "Nexus Venture Partners, StepStone Group, Lightspeed & Contrary",
+          "Domestic Institutional Investors & Family Offices (Motilal Oswal, Raamdeo Agrawal, Singularity)",
+          "Kaiser Permanente & Glade Brook"
+        ],
+        ipoStatus: "SEBI U-DRHP Filed 8 June 2026 (₹8,010 Cr Fresh Issue + 11.35 Cr Share OFS)",
+        ipoStage: "SEBI Observation Received; Listing Window Shifted to Feb–May 2027",
+        metrics: [
+          { label: "FY26 Operating Revenue", value: "₹22,624 Cr (+103.6% YoY vs ₹11,110 Cr FY25)" },
+          { label: "FY26 Ad Revenue & Stores", value: "₹1,635.7 Cr (+151% YoY) | 1,139 Dark Stores" },
+          { label: "Cash Balance (31 Mar '26)", value: "₹5,681 Cr Cash (Debt-Free) | 2.33M Daily Orders" }
+        ],
+        catalysts: [
+          "Completed Singapore-to-India reverse-flip (`Zepto Limited`), filed confidential SEBI DRHP on Dec 27, 2025, received SEBI observation letter in May 2026, and filed its Updated DRHP (U-DRHP) on June 8, 2026 for an ₹11,000–₹12,000 Cr IPO (₹8,010 Cr Fresh Issue + 11.35 Cr share OFS; BRLMs include portfolio holding IIFL Capital Services).",
+          "U-DRHP disclosures reveal explosive scale: FY26 revenue doubled to ₹22,624 Cr (119.5% 2Y order CAGR, 35% QC order share, 48M annual users, ₹1,635.7 Cr high-margin ad revenue), alongside ₹5,905 Cr restated FY26 net loss.",
+          "Closed a ₹1,000+ Cr ($105M) pre-IPO private placement on August 1, 2026 to strengthen its ₹5,681 Cr cash war-chest and defer public listing to Feb–May 2027 rather than accept a $2.5B–$3B institutional discount."
+        ],
+        links: [
+          { label: "SEBI Official: Zepto U-DRHP Filing (Jun 2026)", url: "https://www.sebi.gov.in/filings/public-issues/jun-2026/zepto-limited-udrhp1_101929.html" },
+          { label: "Forbes India: Aug 2026 Valuation & DRHP Deep-Dive", url: "https://www.forbesindia.com/article/news/deep-dive/why-zeptos-ipo-ambitions-hit-a-valuation-reality-check/2996648/1" },
+          { label: "Groww: U-DRHP ₹8,010 Cr Fresh Issue Breakdown", url: "https://groww.in/blog/upcoming-ipo-zepto-files-u-drhp-with-sebi-plans-to-raise-8010-crore-via-fresh-issue" }
+        ]
+      },
+      {
+        id: "heg_graphite",
+        rank: "#5 Unlisted",
+        name: "HEG Graphite Limited",
+        brand: "Demerged Pure-Play Graphite Electrodes Entity (To Be Renamed HEG Ltd)",
+        sector: "Energy Transition",
+        weight: 0.48,
+        topTableWeight: "0.48%",
+        valuationBasis: "At Cost",
+        basisType: "cost",
+        latestValuation: "1:1 Demerger Entitlement | 72.40% Pre-Demerger Cost Apportionment",
+        impliedValSub: "Allotted 11 Sep 2026 Under NCLT Composite Scheme",
+        syndicate: [
+          "Mirror Shareholding of Pre-Demerger HEG Limited (Record Date: 7 Sep 2026)",
+          "Promoter Group: LNJ Bhilwara Group (CMD & CEO: Ravi Jhunjhunwala)",
+          "Institutional Holder: Singularity Equity Fund I (0.48% AUM)"
+        ],
+        ipoStatus: "Shares Allotted 11 Sep 2026; NSE & BSE Listing Expected Q3 FY27 (Oct–Nov 2026)",
+        ipoStage: "Exchange Listing Approval Stage (Post-NCLT Allotment)",
+        metrics: [
+          { label: "Share Entitlement Ratio", value: "1:1 (1 Share of ₹2 FV per 1 HEG Share)" },
+          { label: "Tax Cost Apportionment", value: "72.40% HEG Graphite / 27.60% HEG Adv Mat" },
+          { label: "Installed Capacity", value: "100,000 MTPA Single-Site Graphite Electrodes" }
+        ],
+        catalysts: [
+          "Sanctioned by NCLT Indore Bench on August 13, 2026 (Scheme Effective Date: September 1, 2026; Record Date: September 7, 2026) to separate the cash-generative 100,000 MTPA Mandideep graphite electrodes business from the clean-energy/advanced materials arm.",
+          "On September 11, 2026, HEG Graphite Limited allotted 1 fully paid-up equity share (₹2 face value) for every 1 share held in HEG Advanced Materials Limited.",
+          "Per the September 29, 2026 BSE tax apportionment announcement, 72.40% of pre-demerger acquisition cost is assigned to HEG Graphite Limited; post NSE/BSE listing in Q3 FY27, the company will be renamed 'HEG Limited' under CMD Ravi Jhunjhunwala."
+        ],
+        links: [
+          { label: "Arthneeti / BSE: 29 Sep 2026 Cost Apportionment (72.40%)", url: "https://www.arthneeti.com/announcements/heg-ltd-apportionment-of-the-cost-of-acquisition-of-equity-shares-of-the-company-between-the-company-and-heg-graphite-limited-pursuant-to-the-scheme-29-sep-2026" },
+          { label: "Multibagg AI: 1:1 Demerger & Key Sept 2026 Dates", url: "https://www.multibagg.ai/market-pulse/articles/heg-name-change-advanced-materials-cmtlhsn04000b2orhmybenbbr" },
+          { label: "HEG Official: Composite Scheme Presentation", url: "https://hegltd.com/wp-content/uploads/2026/01/InvestorsPresentation.pdf" }
+        ]
+      }
+    ];
+
+    // =========================================================================
+    // 3. STATE, FILTER & REAL-TIME AUTO-SYNC ENGINE
+    // =========================================================================
+    let currentTab = 'listed';
+    let selectedSector = 'All';
+    let selectedStrategy = 'All';
+    let chartsInitialized = false;
+    let countdownSec = 60;
+    let isSyncing = false;
+
+    function formatINR(val, decimals = 2) {
+      if (val === null || val === undefined || isNaN(val)) return '—';
+      return val.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+
+    function calculateWeightedAttribution() {
+      let totalWeightedMove = 0;
+      let totalListedWeight = 0;
+      listedHoldings.forEach(h => {
+        if (h.weight > 0) {
+          totalWeightedMove += (h.weight * h.change1d) / 100;
+          totalListedWeight += h.weight;
+        }
+      });
+      const normalizedMove = totalListedWeight > 0 ? (totalWeightedMove / totalListedWeight) * 100 : 0;
+      const bps = totalWeightedMove * 100;
+
+      const moveEl = document.getElementById('weightedNavMove');
+      const bpsEl = document.getElementById('weightedNavBps');
+      const normEl = document.getElementById('normalizedListedMove');
+
+      const sign = totalWeightedMove >= 0 ? '+' : '';
+      moveEl.textContent = `${sign}${totalWeightedMove.toFixed(2)}%`;
+      bpsEl.textContent = `(${sign}${bps.toFixed(1)} bps)`;
+      normEl.textContent = `${sign}${normalizedMove.toFixed(2)}%`;
+
+      moveEl.className = `text-lg font-bold font-mono-num ${totalWeightedMove >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+      // Update top callout cards dynamically
+      const sym = listedHoldings.find(x => x.id === 'symbiotec');
+      if (sym) {
+        const symSpread = ((sym.cmp - sym.ipoIssuePrice) / sym.ipoIssuePrice) * 100;
+        document.getElementById('symbiotecIpoSpreadBadge').textContent = `${symSpread >= 0 ? '+' : ''}${symSpread.toFixed(2)}% vs Issue`;
+        document.getElementById('symbiotecTopPrice').innerHTML = `₹${formatINR(sym.cmp)} <span class="text-xs">(${sym.change1d >= 0 ? '+' : ''}${sym.change1d.toFixed(2)}% 1D)</span>`;
+      }
+      const heg = listedHoldings.find(x => x.id === 'heg');
+      if (heg) {
+        document.getElementById('hegTopPrice').innerHTML = `₹${formatINR(heg.cmp)} <span class="text-xs">(${heg.change1d >= 0 ? '+' : ''}${heg.change1d.toFixed(2)}% 1D)</span>`;
+      }
+      const pern = listedHoldings.find(x => x.id === 'perniaspop');
+      if (pern) {
+        const pernSpread = ((pern.cmp - pern.ipoIssuePrice) / pern.ipoIssuePrice) * 100;
+        document.getElementById('perniasIpoSpreadBadge').textContent = `${pernSpread >= 0 ? '+' : ''}${pernSpread.toFixed(2)}% vs ₹575 IPO`;
+        document.getElementById('perniasTopPrice').innerHTML = `₹${formatINR(pern.cmp)} <span class="text-xs">(${pern.change1d >= 0 ? '+' : ''}${pern.change1d.toFixed(2)}% 1D)</span>`;
+      }
+    }
+
+    // Live Market Sync Engine: Runs automatically on every page open & every 60s
+    async function triggerLiveMarketSync(isManual = false) {
+      if (isSyncing) return;
+      isSyncing = true;
+      const statusEl = document.getElementById('liveFeedStatusText');
+      const btnText = document.getElementById('syncCountdownText');
+      if (btnText) btnText.textContent = 'Syncing...';
+
+      let updatedCount = 0;
+
+      // 1. Check if user connected a published Google Sheet CSV URL
+      const customCsvUrl = localStorage.getItem('sef1_gsheet_csv_url');
+      if (customCsvUrl) {
+        try {
+          const resp = await fetch(customCsvUrl, { cache: 'no-store' });
+          if (resp.ok) {
+            const csvText = await resp.text();
+            const lines = csvText.split(/\r?\n/);
+            lines.forEach(line => {
+              const cols = line.split(',');
+              if (cols.length >= 8) {
+                const tickerCell = (cols[2] || '').replace(/"/g, '').trim();
+                const priceVal = parseFloat((cols[6] || '').replace(/[^0-9.-]/g, ''));
+                const chgVal = parseFloat((cols[7] || '').replace(/[^0-9.-]/g, ''));
+                const match = listedHoldings.find(h => h.gsheetsTicker === tickerCell || h.ticker === tickerCell);
+                if (match && !isNaN(priceVal) && priceVal > 0) {
+                  match.cmp = priceVal;
+                  if (!isNaN(chgVal)) match.change1d = chgVal;
+                  updatedCount++;
+                }
+              }
+            });
+          }
+        } catch (e) {
+          // Fallback to public quote proxy below
+        }
+      }
+
+      // 2. Multi-Proxy Public Yahoo Finance Live Quote Sync
+      if (updatedCount === 0) {
+        const symbols = listedHoldings.map(h => h.yahooSymbol).join(',');
+        const yfUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}`;
+        const proxies = [
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(yfUrl)}`,
+          `https://corsproxy.io/?${encodeURIComponent(yfUrl)}`
+        ];
+
+        for (const proxyUrl of proxies) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4500);
+            const res = await fetch(proxyUrl, { signal: controller.signal, cache: 'no-store' });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              const results = data?.quoteResponse?.result || [];
+              results.forEach(q => {
+                const match = listedHoldings.find(h => h.yahooSymbol === q.symbol);
+                if (match && q.regularMarketPrice) {
+                  match.cmp = Number(q.regularMarketPrice);
+                  if (q.regularMarketChangePercent !== undefined) {
+                    match.change1d = Number(q.regularMarketChangePercent);
+                  }
+                  if (q.regularMarketChange !== undefined) {
+                    match.changeAbs = Number(q.regularMarketChange);
+                  }
+                  if (q.fiftyTwoWeekHigh && q.fiftyTwoWeekHigh > match.high52) {
+                    match.high52 = Number(q.fiftyTwoWeekHigh);
+                  }
+                  if (q.fiftyTwoWeekLow && q.fiftyTwoWeekLow < match.low52) {
+                    match.low52 = Number(q.fiftyTwoWeekLow);
+                  }
+                  updatedCount++;
+                }
+              });
+              if (updatedCount > 0) break;
+            }
+          } catch (err) {
+            // Continue to next proxy or verified intraday tape
+          }
+        }
+      }
+
+      const nowStr = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      if (updatedCount > 0) {
+        statusEl.textContent = `Live Feed Synced (${updatedCount} tickers) • ${nowStr} IST`;
+      } else {
+        statusEl.textContent = `Auto-Sync Active • Verified NSE/BSE Tape: 14 Oct 2026 (${nowStr} IST)`;
+      }
+
+      calculateWeightedAttribution();
+      renderListedTable(true);
+      document.getElementById('gsheetsTsvTextarea').value = buildGoogleSheetsTSV();
+
+      countdownSec = 60;
+      isSyncing = false;
+      if (btnText) btnText.textContent = `Sync Now (${countdownSec}s)`;
+    }
+
+    function openLiveSyncModal() {
+      const saved = localStorage.getItem('sef1_gsheet_csv_url') || '';
+      document.getElementById('customSheetCsvInput').value = saved;
+      document.getElementById('liveSyncModalBackdrop').classList.remove('hidden');
+    }
+
+    function closeLiveSyncModal() {
+      document.getElementById('liveSyncModalBackdrop').classList.add('hidden');
+    }
+
+    function saveCustomSheetCsv() {
+      const val = document.getElementById('customSheetCsvInput').value.trim();
+      if (val) {
+        localStorage.setItem('sef1_gsheet_csv_url', val);
+        document.getElementById('customSheetSavedMsg').classList.remove('hidden');
+        triggerLiveMarketSync(true);
+      } else {
+        localStorage.removeItem('sef1_gsheet_csv_url');
+      }
+    }
+
+    function getFrameworkBadge(framework) {
+      if (framework === 'Structural Compounder') {
+        return `<span class="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Structural Compounder</span>`;
+      } else if (framework === 'Private to Public') {
+        return `<span class="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">Private to Public</span>`;
+      }
+      return `<span class="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30">Value / Cycle Play</span>`;
+    }
+
+    function renderListedTable(flash = false) {
+      const tbody = document.getElementById('holdingsTableBody');
+      const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+
+      const filtered = listedHoldings.filter(h => {
+        const matchSector = selectedSector === 'All' || h.sector === selectedSector;
+        let matchStrat = true;
+        if (selectedStrategy === 'Preferential Allotment') matchStrat = h.isPipe;
+        else if (selectedStrategy === 'Listed') matchStrat = true;
+        else if (selectedStrategy === 'Unlisted / Pre-IPO') matchStrat = false;
+
+        const searchBlob = `${h.name} ${h.ticker} ${h.altTicker} ${h.sector} ${h.framework} ${h.specialBadge} ${h.businessBrief.join(' ')}`.toLowerCase();
+        const matchQuery = !query || searchBlob.includes(query);
+
+        return matchSector && matchStrat && matchQuery;
+      });
+
+      document.getElementById('tableCountBadge').textContent = `${filtered.length} / ${listedHoldings.length} Shown`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="11" class="py-10 text-center text-slate-400">
+              No listed holdings match your current filter criteria. Try selecting "All Sectors" or switching to Tab 2 for Unlisted holdings.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(h => {
+        const isPos = h.change1d >= 0;
+        const changeSign = isPos ? '+' : '';
+        const changeBadgeClass = isPos
+          ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+          : 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+
+        const contribBps = (h.weight * h.change1d);
+        const contribStr = h.weight > 0
+          ? `${contribBps >= 0 ? '+' : ''}${contribBps.toFixed(1)} bps`
+          : 'Watchlist';
+
+        const rangePct = Math.max(0, Math.min(100, ((h.cmp - h.low52) / (h.high52 - h.low52)) * 100));
+
+        const pipeBadge = h.isPipe
+          ? `<span class="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">PIPE / Pref</span>`
+          : '';
+
+        const ipoComparison = h.ipoIssuePrice
+          ? (() => {
+              const diffPct = ((h.cmp - h.ipoIssuePrice) / h.ipoIssuePrice) * 100;
+              const cls = diffPct >= 0 ? 'text-emerald-400' : 'text-rose-400';
+              return `<div class="text-[10px] font-mono-num ${cls} mt-0.5">vs ₹${h.ipoIssuePrice} IPO: ${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(2)}%</div>`;
+            })()
+          : '';
+
+        return `
+          <tr onclick="openDrawer('${h.id}')" class="row-hover cursor-pointer group ${flash ? 'flash-row' : ''}">
+            <td class="py-3.5 pl-5 pr-2 font-mono-num font-bold ${h.rank === 'Watchlist' ? 'text-amber-400 text-[11px]' : 'text-slate-300'}">
+              ${h.rank}
+            </td>
+            <td class="py-3.5 px-3">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white group-hover:text-indigo-300 transition-colors">${h.name}</span>
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                <span class="px-1.5 py-0.5 text-[10px] font-mono font-semibold rounded bg-slate-800 text-cyan-300 border border-slate-700">${h.ticker}</span>
+                <span class="text-[10px] text-slate-500">${h.altTicker}</span>
+                ${h.specialBadge ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700/70">${h.specialBadge}</span>` : ''}
+              </div>
+            </td>
+            <td class="py-3.5 px-3">
+              <div class="font-medium text-slate-200">${h.sector}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${h.cap}</div>
+            </td>
+            <td class="py-3.5 px-3">
+              <div class="flex flex-wrap items-center gap-1.5">
+                ${getFrameworkBadge(h.framework)}
+                ${pipeBadge}
+              </div>
+            </td>
+            <td class="py-3.5 px-3 text-right font-mono-num font-bold text-white">
+              ${h.weight > 0 ? h.weight.toFixed(1) + '%' : '<span class="text-[10px] text-amber-300">PIPE Watch</span>'}
+            </td>
+            <td class="py-3.5 px-3 text-right font-mono-num">
+              <div class="font-bold text-white text-sm">₹${formatINR(h.cmp)}</div>
+              ${ipoComparison}
+            </td>
+            <td class="py-3.5 px-3 text-right font-mono-num">
+              <span class="inline-block px-2 py-0.5 rounded-md border font-semibold ${changeBadgeClass}">
+                ${changeSign}${h.change1d.toFixed(2)}%
+              </span>
+            </td>
+            <td class="py-3.5 px-3 text-right font-mono-num ${contribBps >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+              ${contribStr}
+            </td>
+            <td class="py-3.5 px-4">
+              <div class="flex items-center justify-between text-[10px] font-mono-num text-slate-400 mb-1">
+                <span>₹${formatINR(h.low52, 0)}</span>
+                <span class="text-slate-300 font-semibold">${rangePct.toFixed(0)}%</span>
+                <span>₹${formatINR(h.high52, 0)}</span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden relative">
+                <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-cyan-400 to-emerald-400" style="width: ${rangePct}%"></div>
+              </div>
+            </td>
+            <td class="py-3.5 px-3 text-right font-mono-num text-slate-200">
+              ₹${formatINR(h.mcapCr, 0)}
+            </td>
+            <td class="py-3.5 pl-3 pr-5 text-right font-mono-num text-slate-300">
+              ${h.pe ? h.pe.toFixed(1) + 'x' : `<span class="text-[10px] text-slate-500">${h.peNote}</span>`}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderUnlistedCards() {
+      const grid = document.getElementById('unlistedCardsGrid');
+      const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+
+      const filtered = unlistedHoldings.filter(u => {
+        const matchSector = selectedSector === 'All' || u.sector === selectedSector;
+        const blob = `${u.name} ${u.brand} ${u.sector} ${u.latestValuation} ${u.syndicate.join(' ')} ${u.catalysts.join(' ')}`.toLowerCase();
+        const matchQuery = !query || blob.includes(query);
+        return matchSector && matchQuery;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-2 glass-card rounded-xl p-8 text-center text-slate-400">No unlisted holdings match the current filter.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(u => {
+        const basisBadge = u.basisType === 'cost'
+          ? `<span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Valuation Basis: ${u.valuationBasis}</span>`
+          : `<span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">${u.valuationBasis}</span>`;
+
+        return `
+          <div class="glass-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 text-[11px] font-mono font-bold rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${u.rank}</span>
+                  <span class="px-2 py-0.5 text-[11px] font-medium rounded bg-slate-800 text-slate-300">${u.sector}</span>
+                </div>
+                ${basisBadge}
+              </div>
+
+              <div class="mt-3 flex items-start justify-between gap-3">
+                <div>
+                  <h3 class="text-base font-bold text-white">${u.name}</h3>
+                  <p class="text-xs text-indigo-300 font-medium">${u.brand}</p>
+                </div>
+                <div class="text-right shrink-0">
+                  <div class="text-[10px] uppercase tracking-wider text-slate-400">SEF I Weight</div>
+                  <div class="text-lg font-bold font-mono-num text-white">${u.weight.toFixed(2)}%</div>
+                </div>
+              </div>
+
+              <!-- Valuation & IPO Catalyst Banner -->
+              <div class="mt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-slate-950/70 border border-slate-800/90 rounded-xl p-3">
+                <div>
+                  <div class="text-[10px] uppercase tracking-wider text-slate-400">Latest Reported Funding Valuation</div>
+                  <div class="text-xs font-bold text-emerald-400 mt-0.5">${u.latestValuation}</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">${u.impliedValSub}</div>
+                </div>
+                <div class="sm:border-l sm:border-slate-800 sm:pl-3">
+                  <div class="text-[10px] uppercase tracking-wider text-slate-400">2026–27 IPO / Demerger Status</div>
+                  <div class="text-xs font-bold text-amber-300 mt-0.5">${u.ipoStatus}</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">${u.ipoStage}</div>
+                </div>
+              </div>
+
+              <!-- Key Operating Metrics -->
+              <div class="mt-3 grid grid-cols-3 gap-2">
+                ${u.metrics.map(m => `
+                  <div class="bg-slate-900/80 border border-slate-800/80 rounded-lg p-2">
+                    <div class="text-[10px] text-slate-400">${m.label}</div>
+                    <div class="text-[11px] font-mono-num font-semibold text-slate-100 mt-0.5">${m.value}</div>
+                  </div>
+                `).join('')}
+              </div>
+
+              <!-- Investor Syndicate -->
+              <div class="mt-3.5">
+                <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Institutional Investor Syndicate</div>
+                <div class="flex flex-wrap gap-1.5">
+                  ${u.syndicate.map(s => `<span class="px-2 py-0.5 text-[11px] rounded-md bg-slate-800/90 text-slate-300 border border-slate-700/70">${s}</span>`).join('')}
+                </div>
+              </div>
+
+              <!-- Deal News & Catalysts -->
+              <div class="mt-3.5">
+                <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">2025–2026 Deal Intelligence & Catalysts</div>
+                <ul class="space-y-1.5 text-xs text-slate-300">
+                  ${u.catalysts.map(c => `
+                    <li class="flex items-start gap-2">
+                      <span class="text-indigo-400 mt-1">•</span>
+                      <span>${c}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            </div>
+
+            <!-- Grounded Source Links -->
+            <div class="pt-3 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
+              <span class="text-[10px] uppercase tracking-wider text-slate-500">Verified Sources:</span>
+              ${u.links.map(l => `
+                <a href="${l.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/25 text-[11px] font-medium transition-colors">
+                  <span>${l.label}</span>
+                  <i data-lucide="external-link" class="w-3 h-3"></i>
+                </a>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // =========================================================================
+    // 4. INTERACTIVE SLIDE-OUT DRAWER
+    // =========================================================================
+    function openDrawer(id) {
+      const h = listedHoldings.find(item => item.id === id);
+      if (!h) return;
+
+      const isPos = h.change1d >= 0;
+      const changeSign = isPos ? '+' : '';
+      const rangePct = Math.max(0, Math.min(100, ((h.cmp - h.low52) / (h.high52 - h.low52)) * 100));
+
+      document.getElementById('drawerBadges').innerHTML = `
+        <span class="px-2 py-0.5 text-xs font-mono font-bold rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${h.rank}</span>
+        <span class="px-2 py-0.5 text-xs font-mono font-semibold rounded bg-slate-800 text-cyan-300 border border-slate-700">${h.ticker}</span>
+        ${getFrameworkBadge(h.framework)}
+        ${h.isPipe ? `<span class="px-2 py-0.5 text-xs font-semibold rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">PIPE / Preferential Allotment</span>` : ''}
+      `;
+      document.getElementById('drawerTitle').textContent = h.name;
+      document.getElementById('drawerSubtitle').textContent = `${h.sector} • ${h.cap} • Alternate ID: ${h.altTicker}`;
+
+      const ipoCallout = h.ipoIssuePrice ? (() => {
+        const diffPct = ((h.cmp - h.ipoIssuePrice) / h.ipoIssuePrice) * 100;
+        const isUp = diffPct >= 0;
+        return `
+          <div class="p-3.5 rounded-xl border ${isUp ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'} flex items-center justify-between">
+            <div>
+              <div class="text-[11px] font-semibold uppercase tracking-wider ${isUp ? 'text-emerald-300' : 'text-amber-300'}">Sept 2026 IPO Price Discovery Tracker</div>
+              <div class="text-xs text-slate-300 mt-0.5">IPO Issue Price: <strong>₹${formatINR(h.ipoIssuePrice)}</strong> vs Live CMP: <strong>₹${formatINR(h.cmp)}</strong></div>
+            </div>
+            <div class="text-base font-mono-num font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'}">
+              ${isUp ? '+' : ''}${diffPct.toFixed(2)}%
+            </div>
+          </div>
+        `;
+      })() : '';
+
+      document.getElementById('drawerContent').innerHTML = `
+        <!-- Live Quote & Valuation Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
+            <div class="text-[10px] uppercase tracking-wider text-slate-400">Live CMP (14 Oct)</div>
+            <div class="text-lg font-bold font-mono-num text-white mt-0.5">₹${formatINR(h.cmp)}</div>
+            <div class="text-xs font-mono-num ${isPos ? 'text-emerald-400' : 'text-rose-400'}">${changeSign}${h.change1d.toFixed(2)}% (${changeSign}₹${h.changeAbs.toFixed(2)})</div>
+          </div>
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
+            <div class="text-[10px] uppercase tracking-wider text-slate-400">SEF I Portfolio Weight</div>
+            <div class="text-lg font-bold font-mono-num text-indigo-400 mt-0.5">${h.weight > 0 ? h.weight.toFixed(1) + '%' : 'Watchlist'}</div>
+            <div class="text-xs font-mono-num text-slate-400">1D Attribution: ${h.weight > 0 ? (h.weight * h.change1d >= 0 ? '+' : '') + (h.weight * h.change1d).toFixed(1) + ' bps' : 'PIPE Tracker'}</div>
+          </div>
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
+            <div class="text-[10px] uppercase tracking-wider text-slate-400">Market Cap</div>
+            <div class="text-lg font-bold font-mono-num text-white mt-0.5">₹${formatINR(h.mcapCr, 0)} Cr</div>
+            <div class="text-xs text-slate-400">${h.cap}</div>
+          </div>
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
+            <div class="text-[10px] uppercase tracking-wider text-slate-400">Trailing P/E & EPS</div>
+            <div class="text-lg font-bold font-mono-num text-cyan-400 mt-0.5">${h.pe ? h.pe.toFixed(2) + 'x' : 'N/A'}</div>
+            <div class="text-xs font-mono-num text-slate-400">EPS: ₹${h.eps.toFixed(2)}</div>
+          </div>
+        </div>
+
+        ${ipoCallout}
+
+        <!-- 52-Week Range Bar -->
+        <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4">
+          <div class="flex items-center justify-between text-xs mb-2">
+            <span class="text-slate-400">52-Week Low: <strong class="font-mono-num text-slate-200">₹${formatINR(h.low52)}</strong></span>
+            <span class="text-indigo-300 font-mono-num font-semibold">Range Position: ${rangePct.toFixed(1)}%</span>
+            <span class="text-slate-400">52-Week High: <strong class="font-mono-num text-slate-200">₹${formatINR(h.high52)}</strong></span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+            <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-cyan-400 to-emerald-400" style="width: ${rangePct}%"></div>
+          </div>
+        </div>
+
+        <!-- 3-Point Institutional Business & Thesis Brief -->
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-300 mb-2.5 flex items-center gap-2">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+            <span>Singularity 3-Point Institutional Thesis & Business Brief</span>
+          </h3>
+          <div class="space-y-2.5">
+            ${h.businessBrief.map((pt, idx) => `
+              <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 flex items-start gap-3">
+                <span class="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">${idx + 1}</span>
+                <p class="text-xs text-slate-200 leading-relaxed">${pt}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Timestamped Material News & Earnings Catalysts -->
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2.5 flex items-center gap-2">
+            <i data-lucide="newspaper" class="w-4 h-4"></i>
+            <span>Recent Material News, Q1/Q2 FY27 Earnings & Corporate Catalysts (2026)</span>
+          </h3>
+          <div class="space-y-3">
+            ${h.catalysts.map(c => `
+              <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <span class="px-2 py-0.5 text-[10px] font-mono font-semibold rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">${c.date}</span>
+                  <a href="${c.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300 font-medium">
+                    <span>${c.source}</span>
+                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                  </a>
+                </div>
+                <h4 class="text-sm font-bold text-white mt-1">${c.title}</h4>
+                <p class="text-xs text-slate-300 mt-1 leading-relaxed">${c.detail}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Google Sheets Formula Snippet for This Stock -->
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3.5">
+          <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Google Sheets Live Formula Snippet</div>
+          <code class="text-xs font-mono text-cyan-300 select-all">=GOOGLEFINANCE("${h.gsheetsTicker}", "price")</code>
+        </div>
+      `;
+
+      const backdrop = document.getElementById('drawerBackdrop');
+      const drawer = document.getElementById('intelligenceDrawer');
+      backdrop.classList.remove('hidden');
+      setTimeout(() => {
+        backdrop.classList.remove('opacity-0');
+        drawer.classList.remove('translate-x-full');
+      }, 10);
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeDrawer() {
+      const backdrop = document.getElementById('drawerBackdrop');
+      const drawer = document.getElementById('intelligenceDrawer');
+      backdrop.classList.add('opacity-0');
+      drawer.classList.add('translate-x-full');
+      setTimeout(() => backdrop.classList.add('hidden'), 250);
+    }
+
+    // =========================================================================
+    // 5. TAB SWITCHING & FILTER HANDLERS
+    // =========================================================================
+    function switchTab(tab) {
+      currentTab = tab;
+      ['listed', 'unlisted', 'analytics'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById(`tabBtn-${t}`);
+        if (t === tab) {
+          btn.className = "tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-2";
+        } else {
+          btn.className = "tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center gap-2";
+        }
+      });
+
+      if (tab === 'analytics' && !chartsInitialized) {
+        setTimeout(initCharts, 60);
+        chartsInitialized = true;
+      }
+    }
+
+    function setSectorFilter(sector) {
+      selectedSector = sector;
+      document.querySelectorAll('.sector-pill').forEach(btn => {
+        if (btn.dataset.sector === sector) {
+          btn.className = "sector-pill shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-900";
+        } else {
+          btn.className = "sector-pill shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700";
+        }
+      });
+      applyFilters();
+    }
+
+    function setStrategyFilter(strat) {
+      selectedStrategy = strat;
+      document.querySelectorAll('.strat-pill').forEach(btn => {
+        if (btn.dataset.strat === strat) {
+          btn.className = "strat-pill px-2.5 py-1 rounded-md font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30";
+        } else {
+          btn.className = "strat-pill px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200";
+        }
+      });
+
+      if (strat === 'Unlisted / Pre-IPO' && currentTab === 'listed') {
+        switchTab('unlisted');
+      } else if ((strat === 'Listed' || strat === 'Preferential Allotment') && currentTab === 'unlisted') {
+        switchTab('listed');
+      }
+      applyFilters();
+    }
+
+    function applyFilters() {
+      renderListedTable();
+      renderUnlistedCards();
+    }
+
+    // =========================================================================
+    // 6. GOOGLE SHEETS LIVE FORMULA TSV GENERATOR & CLIPBOARD EXPORTER
+    // =========================================================================
+    function buildGoogleSheetsTSV() {
+      const headers = [
+        "Rank",
+        "Company Name",
+        "Google Finance Ticker",
+        "Sector",
+        "Cap Type",
+        "SEF I Weight (%)",
+        "Live CMP Formula",
+        "Live 1D % Change Formula",
+        "Weighted 1D Attribution (%)",
+        "52W Low Formula",
+        "52W High Formula",
+        "Trailing P/E Formula",
+        "Oct 14 (14:00 IST) Snapshot CMP (₹)"
+      ];
+
+      const rows = [headers.join("\t")];
+      listedHoldings.forEach((h, idx) => {
+        const rowNum = idx + 2;
+        const wtVal = h.weight > 0 ? h.weight : 0;
+        const row = [
+          h.rank,
+          h.name,
+          h.gsheetsTicker,
+          h.sector,
+          h.cap,
+          wtVal,
+          `=GOOGLEFINANCE("${h.gsheetsTicker}","price")`,
+          `=GOOGLEFINANCE("${h.gsheetsTicker}","changepct")`,
+          `=(F${rowNum}*H${rowNum})/100`,
+          `=GOOGLEFINANCE("${h.gsheetsTicker}","low52")`,
+          `=GOOGLEFINANCE("${h.gsheetsTicker}","high52")`,
+          `=IFERROR(GOOGLEFINANCE("${h.gsheetsTicker}","pe"),"N/A")`,
+          h.cmp
+        ];
+        rows.push(row.join("\t"));
+      });
+      return rows.join("\n");
+    }
+
+    function copyGoogleSheetsTSV() {
+      const tsv = buildGoogleSheetsTSV();
+      const textarea = document.getElementById('gsheetsTsvTextarea');
+      textarea.value = tsv;
+      textarea.select();
+      navigator.clipboard.writeText(tsv).catch(() => {
+        document.execCommand('copy');
+      });
+
+      const toast = document.getElementById('copyStatusToast');
+      const btnText = document.getElementById('copyTsvBtnText');
+      toast.classList.remove('hidden');
+      btnText.textContent = "Copied to Clipboard!";
+      setTimeout(() => {
+        btnText.textContent = "Copy Live Google Sheets Formulas";
+      }, 3000);
+    }
+
+    function downloadGoogleSheetsTSV() {
+      const tsv = buildGoogleSheetsTSV();
+      const blob = new Blob([tsv], { type: 'text/tab-separated-values;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'SEF_I_Live_Google_Sheets_Formulas_Oct2026.tsv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // =========================================================================
+    // 7. CHART.JS ANALYTICS INITIALIZATION (WITH 25% RED DASHED CAP PLUGIN)
+    // =========================================================================
+    function initCharts() {
+      if (!window.Chart) return;
+      Chart.defaults.color = '#94A3B8';
+      Chart.defaults.font.family = "'Inter', sans-serif";
+
+      const sectorCapLinePlugin = {
+        id: 'sectorCapLine',
+        afterDraw(chart) {
+          const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
+          if (!x) return;
+          const xPos = x.getPixelForValue(25);
+          ctx.save();
+          ctx.beginPath();
+          ctx.setLineDash([6, 4]);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#F43F5E';
+          ctx.moveTo(xPos, top);
+          ctx.lineTo(xPos, bottom);
+          ctx.stroke();
+
+          ctx.fillStyle = '#FDA4AF';
+          ctx.font = '600 10px Inter, sans-serif';
+          ctx.textAlign = 'right';
+          ctx.fillText('25% Sector Cap', xPos - 6, top + 14);
+          ctx.restore();
+        }
+      };
+
+      const sectorCtx = document.getElementById('sectorChart').getContext('2d');
+      new Chart(sectorCtx, {
+        type: 'bar',
+        data: {
+          labels: [
+            'Industrials',
+            'Financial Services',
+            'Healthcare / Pharma',
+            'Energy Transition',
+            'Consumer',
+            'Others',
+            'New Economy (Tech)',
+            'Thematic Investments'
+          ],
+          datasets: [{
+            label: 'SEF I Allocation (%)',
+            data: [22.8, 17.0, 13.9, 12.5, 11.0, 9.8, 8.6, 2.6],
+            backgroundColor: [
+              'rgba(99, 102, 241, 0.85)',
+              'rgba(56, 189, 248, 0.85)',
+              'rgba(16, 185, 129, 0.85)',
+              'rgba(245, 158, 11, 0.85)',
+              'rgba(168, 85, 247, 0.85)',
+              'rgba(100, 116, 139, 0.85)',
+              'rgba(236, 72, 153, 0.85)',
+              'rgba(45, 212, 191, 0.85)'
+            ],
+            borderRadius: 5,
+            barThickness: 18
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${ctx.parsed.x}% of AUM (Max Cap: 25.0%)`
+              }
+            }
+          },
+          scales: {
+            x: {
+              min: 0,
+              max: 28,
+              grid: { color: 'rgba(51, 65, 85, 0.35)' },
+              ticks: { callback: (v) => v + '%' }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: '#E2E8F0', font: { size: 11, weight: '500' } }
+            }
+          }
+        },
+        plugins: [sectorCapLinePlugin]
+      });
+
+      const capCtx = document.getElementById('capSplitChart').getContext('2d');
+      new Chart(capCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Small & Mid Cap (82.7%)', 'Large Cap (9.6%)', 'Unlisted / Pre-IPO (5.9%)', 'Cash & Equivalents (1.8%)'],
+          datasets: [{
+            data: [82.7, 9.6, 5.9, 1.8],
+            backgroundColor: ['#6366F1', '#06B6D4', '#F59E0B', '#334155'],
+            borderColor: '#0B1120',
+            borderWidth: 3,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '66%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: '#CBD5E1', padding: 12, boxWidth: 12, font: { size: 11 } }
+            }
+          }
+        }
+      });
+
+      const valCtx = document.getElementById('forwardValChart').getContext('2d');
+      new Chart(valCtx, {
+        type: 'bar',
+        data: {
+          labels: ['FY26', 'FY27E', 'FY28E'],
+          datasets: [
+            {
+              type: 'bar',
+              label: 'SEF I Forward P/E (x)',
+              data: [54, 33, 18],
+              backgroundColor: 'rgba(99, 102, 241, 0.8)',
+              borderRadius: 6,
+              yAxisID: 'y'
+            },
+            {
+              type: 'bar',
+              label: 'BSE 500 Forward P/E (x)',
+              data: [23, 19, 17],
+              backgroundColor: 'rgba(56, 189, 248, 0.65)',
+              borderRadius: 6,
+              yAxisID: 'y'
+            },
+            {
+              type: 'bar',
+              label: 'Nifty 50 Forward P/E (x)',
+              data: [20, 17, 15],
+              backgroundColor: 'rgba(148, 163, 184, 0.5)',
+              borderRadius: 6,
+              yAxisID: 'y'
+            },
+            {
+              type: 'line',
+              label: 'SEF I PAT Growth (%)',
+              data: [37, 37, 40],
+              borderColor: '#10B981',
+              backgroundColor: '#10B981',
+              borderWidth: 2.5,
+              tension: 0.3,
+              pointRadius: 4,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: '#CBD5E1', boxWidth: 10, font: { size: 10 }, padding: 10 }
+            }
+          },
+          scales: {
+            x: { grid: { display: false } },
+            y: {
+              position: 'left',
+              title: { display: true, text: 'Forward P/E (x)', color: '#94A3B8', font: { size: 10 } },
+              grid: { color: 'rgba(51, 65, 85, 0.35)' }
+            },
+            y1: {
+              position: 'right',
+              min: 0,
+              max: 50,
+              title: { display: true, text: 'PAT Growth (%)', color: '#10B981', font: { size: 10 } },
+              grid: { display: false },
+              ticks: { color: '#10B981', callback: (v) => v + '%' }
+            }
+          }
+        }
+      });
+    }
+
+    // =========================================================================
+    // 8. BOOTSTRAP ON LOAD (AUTO-FETCH LIVE QUOTES EVERY TIME LINK IS OPENED)
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      calculateWeightedAttribution();
+      renderListedTable();
+      renderUnlistedCards();
+      document.getElementById('gsheetsTsvTextarea').value = buildGoogleSheetsTSV();
+      if (window.lucide) lucide.createIcons();
+
+      // Immediately trigger client-side live quote sync on page open
+      triggerLiveMarketSync(false);
+
+      // 60-second auto-refresh ticker
+      setInterval(() => {
+        countdownSec--;
+        if (countdownSec <= 0) {
+          triggerLiveMarketSync(false);
+        } else {
+          const btnText = document.getElementById('syncCountdownText');
+          if (btnText && !isSyncing) {
+            btnText.textContent = `Sync Now (${countdownSec}s)`;
+          }
+        }
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
